@@ -1,7 +1,7 @@
 {
   "name": "decoraciones-toy-story",
   "productName": "Decoraciones Toy Story",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Etiquetas, círculos, imágenes y letras Toy Story para imprimir",
   "main": "main.js",
   "scripts": {

@@ -113,18 +113,42 @@ Object.assign(ops, {
       if (r.status === 403 || r.status === 429) return { ok: false, current, error: 'GitHub ha limitado las consultas por ahora. Inténtalo de nuevo dentro de un rato.' };
       if (!r.ok) return { ok: false, current, error: 'GitHub respondió con el error ' + r.status + '.' };
       const j = await r.json(), asset = pickAsset(j.assets), latest = String(j.tag_name).replace(/^v/, '');
-      return { ok: true, current, latest, hasUpdate: newer(latest, current), notes: j.body || '', asset: asset && { name: asset.name, size: asset.size, url: asset.url }, page: j.html_url };
+      return { ok: true, current, latest, hasUpdate: newer(latest, current), notes: j.body || '', asset: asset && { name: asset.name, size: asset.size, url: asset.url, digest: asset.digest || '' }, page: j.html_url };
     } catch (e) { return { ok: false, current, error: 'No se pudo conectar con GitHub (¿hay internet?).' }; }
   },
-  'upd.download': async (e, { url, name, open = true }) => {
-    const { Readable } = require('stream'), { pipeline } = require('stream/promises');
-    const r = await gh(url, { Accept: 'application/octet-stream' }); if (!r.ok) throw new Error('GitHub respondió ' + r.status + ' al descargar.');
-    const total = Number(r.headers.get('content-length')) || 0; let got = 0, last = 0;
+  'upd.download': async (e, { url, name, size, digest, open = true }) => {
+    const https = require('https'), crypto = require('crypto');
+    const headers = { 'User-Agent': 'decoraciones-toy-story', Accept: 'application/octet-stream' };
+    // Descarga con el módulo https (siguiendo redirecciones) y calcula la huella SHA-256 al vuelo.
+    const fetchTo = (u, dest, onProgress, hops = 0) => new Promise((resolve, reject) => {
+      const req = https.get(u, { headers }, res => {
+        if ([301, 302, 303, 307, 308].includes(res.statusCode) && res.headers.location) {
+          res.resume(); if (hops > 6) return reject(new Error('demasiadas redirecciones'));
+          return resolve(fetchTo(new URL(res.headers.location, u).toString(), dest, onProgress, hops + 1));
+        }
+        if (res.statusCode !== 200) { res.resume(); return reject(new Error('GitHub respondió ' + res.statusCode + ' al descargar.')); }
+        const total = Number(res.headers['content-length']) || 0, hash = crypto.createHash('sha256'), out = fs.createWriteStream(dest); let got = 0, last = 0;
+        res.on('data', c => { hash.update(c); got += c.length; const now = Date.now(); if (now - last > 250) { last = now; onProgress(got, total); } });
+        res.on('error', reject); out.on('error', reject);
+        out.on('finish', () => { onProgress(got, total || got); resolve({ sha: hash.digest('hex'), got }); });
+        res.pipe(out);
+      });
+      req.on('error', reject);
+    });
     const base = String(name).replace(/[^\w.\- ]+/g, '_'); let file = path.join(app.getPath('downloads'), base), n = 2;
     while (await exists(file)) file = path.join(app.getPath('downloads'), base.replace(/(\.[^.]+)$/, `-${n++}$1`));
-    const src = Readable.fromWeb(r.body); src.on('data', c => { got += c.length; const now = Date.now(); if (now - last > 250) { last = now; e.sender.send('ts:progress', { got, total }); } });
-    await pipeline(src, fs.createWriteStream(file)); e.sender.send('ts:progress', { got: total || got, total: total || got });
-    if (open) { const m = await shell.openPath(file); if (m) throw new Error(m); }
+    const part = file + '.part', want = String(digest || '').replace(/^sha256:/, '');
+    let ok = false, lastErr = null;
+    for (let intento = 1; intento <= 2 && !ok; intento++) {
+      try {
+        const r = await fetchTo(url, part, (got, total) => e.sender.send('ts:progress', { got, total }));
+        if ((want && r.sha !== want) || (size && r.got !== size)) { lastErr = new Error('La descarga llegó incompleta o dañada.'); await fsp.rm(part, { force: true }); continue; }
+        ok = true;
+      } catch (err) { lastErr = err; await fsp.rm(part, { force: true }); }
+    }
+    if (!ok) throw lastErr || new Error('No se pudo descargar.');
+    await fsp.rename(part, file);
+    if (open) { const msg = await shell.openPath(file); if (msg) return { file, openError: msg }; }
     return { file };
   }
 });

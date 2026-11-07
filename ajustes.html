@@ -113,7 +113,7 @@
       $('updGo').onclick = async () => {
         $('updGo').hidden = true; $('updBar').hidden = false; $('updBar').value = 0; msg('Descargando…');
         window.ToyStory.onProgress(p => { if (p.total) { $('updBar').value = Math.round(p.got / p.total * 100); msg('Descargando… ' + Math.round(p.got / 1048576) + ' de ' + Math.round(p.total / 1048576) + ' MB'); } });
-        try { await window.ToyStory.call('upd.download', { url: info.asset.url, name: info.asset.name }); $('updBar').hidden = true; msg('Descargada ✓ Se abrió el instalador en tu carpeta de Descargas. Cierra este programa y sigue los pasos para instalarla (en Mac: arrastra la app a Aplicaciones y reemplaza la anterior).'); }
+        try { const d = await window.ToyStory.call('upd.download', { url: info.asset.url, name: info.asset.name, size: info.asset.size, digest: info.asset.digest }); $('updBar').hidden = true; msg('Descargada y verificada ✓ ' + (d.openError ? 'No se pudo abrir sola: búscala en tu carpeta de Descargas (' + d.file + ').' : 'Se abrió el instalador.') + ' Cierra este programa y sigue los pasos para instalarla (en Mac: arrastra la app a Aplicaciones y reemplaza la anterior).'); }
         catch (e) { $('updBar').hidden = true; $('updGo').hidden = false; msg('No se pudo descargar: ' + (e.message || e)); }
       };
       $('curVer').textContent = c.version || '';

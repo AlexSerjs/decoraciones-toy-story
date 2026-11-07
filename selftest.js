@@ -55,8 +55,9 @@ module.exports = (win, ops, app) => {
       const chk = await ops['upd.check'](); log('actualizar', { ok: chk.ok, actual: chk.current, ultima: chk.latest, hayNueva: chk.hasUpdate, instalador: chk.asset && chk.asset.name, error: chk.error });
       if (chk.ok && chk.asset && process.env.TS_TEST_DOWNLOAD) {
         const tmp = path.join(require('os').tmpdir(), 'ts-selftest', 'descargas'); fs.mkdirSync(tmp, { recursive: true }); app.setPath('downloads', tmp);
-        const d = await ops['upd.download']({ sender: wc }, { url: chk.asset.url, name: chk.asset.name, open: false });
-        log('descarga', { archivo: path.basename(d.file), mb: Math.round(fs.statSync(d.file).size / 1048576), coincide: fs.statSync(d.file).size === chk.asset.size });
+        const d = await ops['upd.download']({ sender: wc }, { url: chk.asset.url, name: chk.asset.name, size: chk.asset.size, digest: chk.asset.digest, open: false });
+        const sha = require('crypto').createHash('sha256').update(fs.readFileSync(d.file)).digest('hex');
+        log('descarga', { archivo: path.basename(d.file), mb: Math.round(fs.statSync(d.file).size / 1048576), tamañoOk: fs.statSync(d.file).size === chk.asset.size, huellaOk: 'sha256:' + sha === chk.asset.digest, sinRestos: fs.readdirSync(path.dirname(d.file)).filter(f => f.endsWith('.part')).length === 0 });
       }
     } catch (e) { log('ERROR', String(e && e.stack || e)); }
     app.exit(0);
