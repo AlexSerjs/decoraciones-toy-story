@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generador de letras Toy Story</title>
+<style>
+  :root{--bg:#f3f5f8;--card:#fff;--ink:#1d2733;--mut:#667385;--acc:#1b6fe0;--acc2:#0f4fa8;--line:#d9dfe7}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  h1{font-size:1.25rem;margin:0}
+  h2{font-size:.95rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  a.back{color:var(--acc);font-weight:600;text-decoration:none}
+  .app{display:grid;grid-template-columns:400px 1fr;gap:16px;padding:16px;max-width:1500px;margin:auto}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+  .panel,.preview{display:flex;flex-direction:column;gap:10px}
+  .preview{align-self:start}
+  @media(max-width:900px){.preview{order:-1}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  /* menús desplegables: se abre uno solo */
+  details.acc{background:var(--card);border:1px solid var(--line);border-radius:12px}
+  details.acc>summary{list-style:none;cursor:pointer;padding:14px;font-weight:700;display:flex;justify-content:space-between;align-items:center;min-height:52px}
+  details.acc>summary::-webkit-details-marker{display:none}
+  details.acc>summary::after{content:"▾";color:var(--mut);transition:transform .15s}
+  details.acc[open]>summary::after{transform:rotate(180deg)}
+  details.acc[open]>summary{border-bottom:1px solid var(--line)}
+  details.acc>.in{padding:14px}
+  .btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 16px;border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+  .btn:hover{background:var(--acc2)}
+  .btn.sec{background:#fff;color:var(--acc)}
+  .btn.sec:hover{background:#eef4fd}
+  .btn.block{width:100%}
+  .f label,.ctl label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut);margin-bottom:4px}
+  .ctl{margin:8px 0}
+  .ctl output{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;height:28px}
+  input[type=text],select{width:100%;min-height:46px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+  input[type=color]{width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .chk{display:flex;gap:8px;align-items:center;padding:6px 0;cursor:pointer}
+  .chk input{width:20px;height:20px}
+  .hint{color:var(--mut);font-size:.85rem;margin-top:6px}
+  .info{margin-top:10px;font-weight:600}
+  .help{background:#e8f1fd;border:1px solid #b9d3f6;color:#12417f;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.92rem;margin-top:10px}
+  /* selector tipo pestañas */
+  .seg{display:flex;border:1px solid var(--acc);border-radius:10px;overflow:hidden;position:relative}
+  .seg label{flex:1;text-align:center;cursor:pointer;font-weight:600;color:var(--acc);background:#fff;user-select:none;font-size:.9rem}
+  .seg input{position:absolute;opacity:0;pointer-events:none}
+  .seg span{display:block;padding:10px 6px}
+  .seg input:checked+span{background:var(--acc);color:#fff}
+  .seg input:focus-visible+span{outline:3px solid #9ec5ff;outline-offset:-3px}
+  .stage{background:repeating-conic-gradient(#e6e9ee 0 25%,#f7f8fa 0 50%) 0 0/20px 20px;border-radius:8px;padding:16px;display:flex;justify-content:center;min-height:200px;align-items:center}
+  #out svg{max-width:100%;height:auto;max-height:70vh;display:block}
+  .pstage{background:#dfe3e9;border-radius:8px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .nav{display:flex;gap:14px;align-items:center}
+  .nav button{min-height:40px;width:46px;border:1px solid var(--acc);background:#fff;color:var(--acc);border-radius:10px;font-size:1.4rem;cursor:pointer}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .th{cursor:pointer;padding:3px;border:2px solid transparent;border-radius:4px}
+  .th.on{border-color:var(--acc)}
+  .pg{position:relative;background:#fff;box-shadow:0 1px 8px #0005;border-radius:2px;max-width:100%}
+  .pg svg{display:block;width:100%;height:100%}
+  .pg i{position:absolute;border:1px dashed #b9b9b9;pointer-events:none}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><a class="back" href="decoraciones-toy-story.html">← Inicio</a><span style="display:flex;gap:8px"><button class="btn" id="bSave" style="min-height:40px">Guardar diseño</button><button class="btn sec" id="bHist" style="min-height:40px">Historial</button></span></div>
+    <h1>Generador de letras Toy Story</h1>
+
+    <details class="acc" id="s1" data-view="design" open>
+      <summary>1 · Texto</summary>
+      <div class="in">
+        <div class="g2 f">
+          <div><label for="t1">Línea de arriba</label><input type="text" id="t1" value="Nombre" maxlength="14"></div>
+          <div><label for="t2">Cinta roja</label><input type="text" id="t2" value="Story" maxlength="14"></div>
+        </div>
+        <div class="f" style="margin-top:8px"><label for="font">Fuente</label>
+          <select id="font"><option>Titan One</option><option>Lilita One</option><option>Bowlby One</option><option>Luckiest Guy</option><option>Passion One</option></select></div>
+        <div class="f" style="margin-top:8px"><label for="mode">Qué dibujar</label>
+          <select id="mode"><option value="all">Letras + cinta roja</option><option value="letters">Solo letras (sin cinta)</option><option value="ribbon">Solo la cinta con su texto</option></select></div>
+        <div class="hint" id="fontInfo"></div>
+      </div>
+    </details>
+
+    <details class="acc" id="s2" data-view="design">
+      <summary>2 · Estilo</summary>
+      <div class="in">
+        <div class="ctl"><label for="s2v">Tamaño de la cinta <output id="s2vO"></output></label><input type="range" id="s2v" min="30" max="120" value="68"></div>
+        <div class="ctl"><label for="sp">Espaciado <output id="spO"></output></label><input type="range" id="sp" min="-5" max="25" value="4"></div>
+        <div class="ctl"><label for="bounce">Letras desordenadas <output id="bounceO"></output></label><input type="range" id="bounce" min="0" max="100" value="55"></div>
+        <div class="ctl"><label for="tilt">Inclinación <output id="tiltO"></output></label><input type="range" id="tilt" min="-12" max="12" value="-3"></div>
+        <div class="ctl"><label for="thick">Grosor del contorno <output id="thickO"></output></label><input type="range" id="thick" min="2" max="14" value="7"></div>
+        <div class="g3 f" style="margin-top:6px">
+          <div><label for="cFill">Letras</label><input type="color" id="cFill" value="#ffd60a"></div>
+          <div><label for="cOut">Contorno</label><input type="color" id="cOut" value="#12318f"></div>
+          <div><label for="cRib">Cinta</label><input type="color" id="cRib" value="#e3202a"></div>
+        </div>
+        <label class="chk"><input type="checkbox" id="d3" checked> Relieve y sombra 3D</label>
+      </div>
+    </details>
+
+    <details class="acc" id="s3" data-view="print">
+      <summary>3 · Cómo imprimirlo</summary>
+      <div class="in">
+        <div class="seg" role="radiogroup" aria-label="Tipo de impresión">
+          <label><input type="radio" name="pmode" value="logo" checked><span>Logo repetido</span></label>
+          <label><input type="radio" name="pmode" value="letras"><span>Una letra por hoja</span></label>
+          <label><input type="radio" name="pmode" value="imprenta"><span>Para imprenta</span></label>
+        </div>
+
+        <div class="f" id="paperWrap" style="margin-top:10px"><label for="paper">Tamaño de hoja</label>
+          <select id="paper"><option value="A4">A4 (21 × 29,7 cm)</option><option value="A3">A3 (29,7 × 42 cm)</option><option value="A2">A2 (42 × 59,4 cm)</option><option value="A1">A1 (59,4 × 84,1 cm)</option></select></div>
+
+        <div id="pLogo">
+          <div class="hint">El logo entero con el tamaño que elijas; se repite para llenar la hoja.</div>
+          <div class="g2 f" style="margin-top:8px">
+            <div><label for="wcm">Ancho del logo (cm)</label><input type="text" id="wcm" value="8" inputmode="decimal"></div>
+            <div><label for="lori">Hoja</label><select id="lori"><option value="auto">Automática</option><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+            <div><label for="lm">Margen (mm)</label><input type="text" id="lm" value="5" inputmode="numeric"></div>
+            <div><label for="lg">Separación (mm)</label><input type="text" id="lg" value="3" inputmode="numeric"></div>
+          </div>
+          <label class="chk"><input type="checkbox" id="cut"> Marco de corte gris fino</label>
+          <div class="info" id="logoInfo"></div>
+        </div>
+
+        <div id="pLetras" hidden>
+          <div class="hint">Cada letra en su propia hoja, todas del mismo tamaño y con la base a la misma altura.</div>
+          <div class="g2 f" style="margin-top:8px">
+            <div><label for="bigSrc">Letras de</label><select id="bigSrc"><option value="t1">Línea de arriba</option><option value="t2">Texto de la cinta</option></select></div>
+            <div><label for="bigOri">Hoja</label><select id="bigOri"><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+            <div><label for="bigM">Margen (mm)</label><input type="text" id="bigM" value="8" inputmode="numeric"></div>
+            <div style="display:flex;align-items:end"><label class="chk" style="margin:0"><input type="checkbox" id="bigKeep"> Mantener el desorden</label></div>
+          </div>
+          <div class="ctl"><label for="bigSize">Tamaño de las letras <output id="bigSizeO"></output></label><input type="range" id="bigSize" min="10" max="100" value="100"></div>
+          <div class="info" id="letInfo"></div>
+        </div>
+
+        <div id="pImp" hidden>
+          <div class="hint">Una sola página con el logo vectorial y el tamaño exacto que pongas. Es lo que se envía a una imprenta: puede ampliarlo o reducirlo sin perder calidad.</div>
+          <div class="g2 f" style="margin-top:8px">
+            <div><label for="iw">Ancho del logo (cm)</label><input type="text" id="iw" value="30" inputmode="decimal"></div>
+            <div><label for="im">Margen alrededor (mm)</label><input type="text" id="im" value="0" inputmode="numeric"></div>
+          </div>
+          <div class="info" id="impInfo"></div>
+        </div>
+      </div>
+    </details>
+
+    <details class="acc" id="s4" data-view="print">
+      <summary>4 · Descargar</summary>
+      <div class="in">
+        <div class="ctl" id="shWrap"><label for="sheets">Número de hojas</label><input type="text" id="sheets" value="1" inputmode="numeric"></div>
+        <button class="btn block" id="bPdf">Descargar PDF</button>
+        <button class="btn sec block" id="bSvgs" style="margin-top:8px" hidden>Descargar un SVG por letra</button>
+        <div class="help">Para la imprenta: envía el PDF vectorial. Si imprimes tú, hazlo a tamaño real (100 %), sin ajustar a página.</div>
+        <h2 style="margin-top:16px">El logo suelto</h2>
+        <button class="btn sec block" id="bSvg">Descargar SVG (vectorial)</button>
+        <div class="g2 f" style="margin-top:8px;align-items:end">
+          <div><label for="pxw">Ancho del PNG (px)</label><input type="text" id="pxw" value="2400" inputmode="numeric"></div>
+          <button class="btn sec" id="bPng">Descargar PNG</button>
+        </div>
+        <button class="btn sec block" id="bGal" style="margin-top:8px">Guardar en la galería (PNG sin fondo)</button>
+        <div class="hint" id="status">Las letras son formas, no texto: se ven igual en cualquier ordenador.</div>
+      </div>
+    </details>
+  </div>
+
+  <div class="preview">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <h2 style="margin:0">Vista previa <span id="shN" style="text-transform:none;letter-spacing:0"></span></h2>
+        <div class="seg" role="radiogroup" aria-label="Qué ver" style="min-width:250px">
+          <label><input type="radio" name="view" value="design" checked><span>Diseño</span></label>
+          <label><input type="radio" name="view" value="print"><span>Impresión en hoja</span></label>
+        </div>
+      </div>
+      <div id="vDesign" class="stage"><div id="out"></div></div>
+      <div id="vPrint" class="pstage" hidden></div>
+    </div>
+  </div>
+</div>
+
+<script src="galeria.js?v=6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.4/dist/svg2pdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const FONTS = { 'Titan One': ['titan-one', '400'], 'Lilita One': ['lilita-one', '400'], 'Bowlby One': ['bowlby-one', '400'], 'Luckiest Guy': ['luckiest-guy', '400'], 'Passion One': ['passion-one', '900'] };
+  const PAPER = { A4: [210, 297], A3: [297, 420], A2: [420, 594], A1: [594, 841] };
+  const cache = {};
+  async function loadFont(name) {
+    if (cache[name]) return cache[name];
+    const [slug, w] = FONTS[name], r = await fetch(`https://cdn.jsdelivr.net/fontsource/fonts/${slug}@latest/latin-${w}-normal.woff`);
+    if (!r.ok) throw new Error('No se pudo cargar la fuente ' + name);
+    return cache[name] = opentype.parse(await r.arrayBuffer());
+  }
+  const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const c = k => Math.max(0, Math.min(255, Math.round(((n >> k) & 255) * f))); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
+  const B = [-1, .7, -.5, .9, -.8, .4, -.6, .8], f2 = n => (+n).toFixed(1);
+  const IDS = ['t1', 't2', 'font', 'mode', 's2v', 'sp', 'bounce', 'tilt', 'thick', 'cFill', 'cOut', 'cRib', 'paper', 'wcm', 'lori', 'lm', 'lg', 'sheets', 'bigSrc', 'bigSize', 'bigOri', 'bigM', 'iw', 'im', 'pxw'], CK = ['d3', 'cut', 'bigKeep'];
+  const radio = n => document.querySelector(`input[name=${n}]:checked`).value, setRadio = (n, v) => { const r = document.querySelector(`input[name=${n}][value=${v}]`); if (r) r.checked = true; };
+  const read = () => { const o = { pmode: radio('pmode') }; IDS.forEach(k => o[k] = $(k).value); CK.forEach(k => o[k] = $(k).checked); o.s2 = o.s2v; return o; };
+  const num = (v, d) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : d; };
+  const paper = () => PAPER[$('paper').value] || PAPER.A4;
+  const cm = mm => (mm / 10).toFixed(1).replace(/\.0$/, '');
+
+  // ---------- dibujo del logo ----------
+  function helpers(font, o) {
+    const upm = font.unitsPerEm, sp = +o.sp / 100;
+    const cap = S => (((font.tables.os2 && font.tables.os2.sCapHeight) || .7 * upm) * S) / upm;
+    function layout(text, S, bf, off = 0) {
+      let x = 0; const items = [];
+      [...text.toUpperCase()].forEach((c, i) => {
+        const adv = font.getAdvanceWidth(c, S), d = font.getPath(c, 0, 0, S).toPathData(2), j = i + off;
+        items.push({ d, x, adv, r: B[j % 8] * 7 * bf, dy: B[(j + 3) % 8] * S * .045 * bf }); x += adv + S * sp;
+      });
+      return { items, W: Math.max(1, x - S * sp), capH: cap(S) };
+    }
+    function group(L, S, rot, cx, base) {
+      const ow = S * o.thick / 100, dark = shade(o.cOut, .55);
+      const letters = (attrs, extra = '') => L.items.map(it => `<path d="${it.d}" transform="translate(${f2(it.x - L.W / 2)} ${f2(it.dy)}) rotate(${f2(it.r)} ${f2(it.adv / 2)} ${f2(-L.capH / 2)})${extra}" ${attrs}/>`).join('');
+      const st = (c, w) => `fill="${c}" stroke="${c}" stroke-width="${f2(w)}" stroke-linejoin="round"`;
+      let s = `<g transform="translate(${f2(cx)} ${f2(base)}) rotate(${f2(rot)} 0 ${f2(-L.capH / 2)})">`;
+      if (o.d3) s += `<g transform="translate(0 ${f2(ow * .9)})">${letters(st(dark, ow * 2))}</g>`;
+      s += letters(st(o.cOut, ow * 2));
+      if (o.d3) s += letters(`fill="${shade(o.cFill, .78)}"`, ` translate(0 ${f2(S * .03)})`);
+      return s + letters(`fill="${o.cFill}"`) + '</g>';
+    }
+    function ribbon(cx, top, rw, rh, rot) {
+      const sk = rh * .08, x0 = cx - rw / 2, x1 = cx + rw / 2, bot = top + rh;
+      const poly = (dy, col) => `<polygon points="${f2(x0)},${f2(top + sk + dy)} ${f2(x1)},${f2(top - sk * .3 + dy)} ${f2(x1 + rw * .04)},${f2(bot - sk * .3 + dy)} ${f2(x0 - rw * .02)},${f2(bot + sk + dy)}" fill="${col}"/>`;
+      return `<g transform="rotate(${f2(rot)} ${f2(cx)} ${f2((top + bot) / 2)})">${o.d3 ? poly(rh * .07, shade(o.cRib, .6)) : ''}${poly(0, o.cRib)}</g>`;
+    }
+    return { layout, group, ribbon };
+  }
+  function composition(font, o) {
+    const h = helpers(font, o), S1 = 200, S2 = S1 * o.s2 / 100, bf = o.bounce / 100, tilt = +o.tilt;
+    if (o.mode === 'ribbon') {
+      const L2 = h.layout(o.t2 || ' ', S2, bf), cx = Math.max(L2.W, 300) / 2, padH = S2 * .34, padV = S2 * .26, rh = L2.capH + 2 * padV;
+      return h.ribbon(cx, 0, L2.W + 2 * padH, rh, tilt * .5) + h.group(L2, S2, tilt * .5, cx, padV + L2.capH);
+    }
+    const L1 = h.layout(o.t1 || ' ', S1, bf), cx = Math.max(L1.W, 400) / 2, base1 = L1.capH;
+    if (o.mode === 'all' && o.t2.trim()) {
+      const L2 = h.layout(o.t2, S2, bf), padH = S2 * .34, padV = S2 * .26, rw = L2.W + 2 * padH, rh = L2.capH + 2 * padV, top = base1 - L1.capH * .12 + S1 * .1, rot = tilt * .5;
+      return h.ribbon(cx, top, rw, rh, rot) + h.group(L1, S1, tilt, cx, base1) + h.group(L2, S2, rot, cx, top + padV + L2.capH);
+    }
+    return h.group(L1, S1, tilt, cx, base1);
+  }
+  function finishSvg(host, parts, thick) {
+    host.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><g id="root">${parts}</g></svg>`;
+    const svg = host.firstChild, bb = svg.querySelector('#root').getBBox(), m = 200 * (thick / 100) * 1.4 + 12;
+    const vb = [bb.x - m, bb.y - m, bb.width + 2 * m, bb.height + 2 * m].map(f2);
+    svg.setAttribute('viewBox', vb.join(' ')); svg.setAttribute('width', Math.round(vb[2])); svg.setAttribute('height', Math.round(vb[3])); return svg;
+  }
+
+  let token = 0, svgEl = null, logo = null;
+  async function build() {
+    const my = ++token, o = read();
+    [['s2v', ' %'], ['sp', ' %'], ['bounce', ' %'], ['tilt', '°'], ['thick', ' %'], ['bigSize', ' %']].forEach(([k, u]) => $(k + 'O').textContent = $(k).value + u);
+    let font; try { font = await loadFont(o.font); $('fontInfo').textContent = ''; } catch (e) { $('fontInfo').textContent = e.message + ' (¿sin conexión?)'; return; }
+    if (my !== token) return;
+    const parts = composition(font, o), tmp = document.createElement('div'); // se mide fuera de pantalla: si la vista está oculta, getBBox daría 0
+    tmp.style.cssText = 'position:absolute;left:-9999px;top:0'; document.body.appendChild(tmp);
+    svgEl = finishSvg(tmp, parts, +o.thick); $('out').replaceChildren(svgEl); tmp.remove();
+    logo = { inner: parts, vb: svgEl.getAttribute('viewBox').split(' ').map(Number) };
+    renderPrint(); tr.touch();
+  }
+
+  // ---------- logo repetido en la hoja ----------
+  function logoLayout() {
+    const w = Math.max(5, num($('wcm').value, 8) * 10), h = w * logo.vb[3] / logo.vb[2], m = Math.max(0, num($('lm').value, 5)), g = Math.max(0, num($('lg').value, 3)), ori = $('lori').value, [ps, pl] = paper();
+    const calc = (W, H) => { const cols = Math.max(0, Math.floor((W - 2 * m + g) / (w + g))), rows = Math.max(0, Math.floor((H - 2 * m + g) / (h + g))); return { W, H, cols, rows, n: cols * rows }; };
+    const v = calc(ps, pl), hz = calc(pl, ps), L = ori === 'v' ? v : ori === 'h' ? hz : (hz.n > v.n ? hz : v);
+    L.w = w; L.h = h; L.g = g; L.m = m; L.land = L.W > L.H;
+    L.x0 = (L.W - (L.cols * w + (L.cols - 1) * g)) / 2; L.y0 = (L.H - (L.rows * h + (L.rows - 1) * g)) / 2; return L;
+  }
+  function logoPageSvg(L) {
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${L.W} ${L.H}" width="${L.W}mm" height="${L.H}mm">`;
+    for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+      const x = L.x0 + c * (L.w + L.g), y = L.y0 + r * (L.h + L.g);
+      s += `<svg x="${f2(x)}" y="${f2(y)}" width="${f2(L.w)}" height="${f2(L.h)}" viewBox="${logo.vb.join(' ')}">${logo.inner}</svg>`;
+      if ($('cut').checked) s += `<rect x="${f2(x)}" y="${f2(y)}" width="${f2(L.w)}" height="${f2(L.h)}" fill="none" stroke="#999" stroke-width=".2"/>`;
+    }
+    return s + '</svg>';
+  }
+  // ---------- una sola página del tamaño exacto (imprenta) ----------
+  function impLayout() {
+    const w = Math.max(10, num($('iw').value, 30) * 10), h = w * logo.vb[3] / logo.vb[2], m = Math.max(0, num($('im').value, 0));
+    return { w, h, m, W: w + 2 * m, H: h + 2 * m };
+  }
+  const impSvg = L => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${f2(L.W)} ${f2(L.H)}" width="${f2(L.W)}mm" height="${f2(L.H)}mm"><svg x="${f2(L.m)}" y="${f2(L.m)}" width="${f2(L.w)}" height="${f2(L.h)}" viewBox="${logo.vb.join(' ')}">${logo.inner}</svg></svg>`;
+
+  const pageHtml = (r, svg, w, guide = true) => `<div class="pg" style="aspect-ratio:${r.W}/${r.H};${w ? 'width:' + w + 'px' : ''}">${svg.replace(/width="[\d.]+mm" height="[\d.]+mm"/, '')}${guide && r.m ? `<i style="left:${r.m / r.W * 100}%;right:${r.m / r.W * 100}%;top:${r.m / r.H * 100}%;bottom:${r.m / r.H * 100}%"></i>` : ''}</div>`;
+  const dispW = (W, H) => Math.round(Math.min(W > H ? 640 : 420, 120 + Math.max(W, H) * 1.0));
+
+  // ---------- una letra por hoja ----------
+  async function bigPages(quiet) {
+    const o = read(), font = await loadFont(o.font), text = (o.bigSrc === 't2' ? o.t2 : o.t1).toUpperCase();
+    const idx = [...text].map((c, i) => [c, i]).filter(([c]) => c.trim()); if (!idx.length) { if (!quiet) alert('Escribe algún texto.'); return null; }
+    const S = 200, ow = S * o.thick / 100, bf = o.bigKeep ? o.bounce / 100 : 0, h = helpers(font, o), fz = Math.max(.1, num(o.bigSize, 100) / 100);
+    const tmp = document.createElement('div'); tmp.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden'; document.body.appendChild(tmp);
+    tmp.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">${idx.map(([c, i], k) => `<g id="l${k}">${h.group(h.layout(c, S, bf, i), S, 0, 0, 0)}</g>`).join('')}</svg>`;
+    const bbs = idx.map((_, k) => tmp.querySelector('#l' + k).getBBox()); tmp.remove();
+    const pad = ow * 1.2, yMin = Math.min(...bbs.map(b => b.y)) - pad, yMax = Math.max(...bbs.map(b => b.y + b.height)) + pad + (o.d3 ? ow * .9 : 0), cw = Math.max(...bbs.map(b => b.width)) + 2 * pad;
+    const [ps, pl] = paper(), land = o.bigOri === 'h', W = land ? pl : ps, H = land ? ps : pl, m = Math.max(0, num(o.bigM, 8)), sc = Math.min((W - 2 * m) / cw, (H - 2 * m) / (yMax - yMin)) * fz, vw = W / sc, vh = H / sc;
+    const pages = idx.map(([c, i], k) => {
+      const b = bbs[k], vx = b.x + b.width / 2 - vw / 2, vy = (yMin + yMax) / 2 - vh / 2;
+      return { ch: c, svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${f2(vx)} ${f2(vy)} ${f2(vw)} ${f2(vh)}" width="${W}mm" height="${H}mm">${h.group(h.layout(c, S, bf, i), S, 0, 0, 0)}</svg>` };
+    });
+    return { pages, W, H, land, m, hcm: (yMax - yMin) * sc / 10, wcm: cw * sc / 10, name: $('paper').value };
+  }
+
+  // ---------- vista de impresión ----------
+  let curSheet = 0, sheetData = null, shTok = 0;
+  function showLetterSheets() {
+    const r = sheetData, box = $('vPrint'); if (!r) { box.innerHTML = '<div class="hint">Escribe algún texto.</div>'; return; }
+    const n = r.pages.length; curSheet = Math.max(0, Math.min(n - 1, curSheet)); const pg = r.pages[curSheet];
+    $('shN').textContent = `(${n} hoja${n === 1 ? '' : 's'} ${r.name}, ${r.land ? 'horizontal' : 'vertical'})`;
+    box.innerHTML = `<div class="nav"><button id="shPrev" aria-label="Hoja anterior">‹</button><b>Hoja ${curSheet + 1} de ${n} · «${pg.ch}»</b><button id="shNext" aria-label="Hoja siguiente">›</button></div>${pageHtml(r, pg.svg, dispW(r.W, r.H))}` +
+      (n > 1 ? '<div class="thumbs">' + r.pages.map((q, k) => `<div class="th${k === curSheet ? ' on' : ''}" data-k="${k}">${pageHtml(r, q.svg, r.land ? 100 : 62)}</div>`).join('') + '</div>' : '');
+    $('shPrev').onclick = () => { curSheet--; showLetterSheets(); }; $('shNext').onclick = () => { curSheet++; showLetterSheets(); };
+    box.querySelectorAll('.th').forEach(t => t.onclick = () => { curSheet = +t.dataset.k; showLetterSheets(); });
+  }
+  async function renderPrint() {
+    const o = read(), pm = o.pmode, view = radio('view') === 'print';
+    $('pLogo').hidden = pm !== 'logo'; $('pLetras').hidden = pm !== 'letras'; $('pImp').hidden = pm !== 'imprenta'; $('paperWrap').hidden = pm === 'imprenta';
+    $('shWrap').hidden = pm !== 'logo'; $('bSvgs').hidden = pm !== 'letras';
+    $('bPdf').textContent = { logo: 'Descargar PDF (' + o.paper + ' con el logo repetido)', letras: 'Descargar PDF (una letra por hoja ' + o.paper + ')', imprenta: 'Descargar PDF para imprenta (1 página)' }[pm];
+    if (!logo) return;
+    if (pm === 'logo') {
+      const L = logoLayout();
+      $('logoInfo').textContent = `Cada logo mide ${cm(L.w)} × ${cm(L.h)} cm. ` + (L.n ? `Caben ${L.n} por hoja ${o.paper} (${L.cols} × ${L.rows}), hoja ${L.land ? 'horizontal' : 'vertical'}.` : 'No cabe en la hoja con ese margen. Reduce el ancho.');
+      if (view) { $('shN').textContent = L.n ? `(${L.n} por hoja ${o.paper})` : ''; $('vPrint').innerHTML = L.n ? pageHtml(L, logoPageSvg(L), dispW(L.W, L.H)) + '<div class="hint">Así saldría cada hoja. La línea de puntos es el margen.</div>' : '<div class="hint">No cabe en la hoja.</div>'; }
+    } else if (pm === 'imprenta') {
+      const L = impLayout();
+      $('impInfo').textContent = `Página de ${cm(L.W)} × ${cm(L.H)} cm; el logo mide ${cm(L.w)} × ${cm(L.h)} cm.`;
+      if (view) { $('shN').textContent = `(${cm(L.W)} × ${cm(L.H)} cm)`; $('vPrint').innerHTML = pageHtml(L, impSvg(L), 520, false) + '<div class="hint">Una sola página, del tamaño exacto del logo. Vectorial: se puede ampliar sin perder calidad.</div>'; }
+    } else {
+      const my = ++shTok; let r = null; try { r = await bigPages(true); } catch (e) { return; }
+      if (my !== shTok) return; sheetData = r; const n = r ? r.pages.length : 0;
+      $('letInfo').textContent = r ? `${n} hoja${n === 1 ? '' : 's'} ${o.paper}. Cada letra mide aprox. ${r.wcm.toFixed(1)} × ${r.hcm.toFixed(1)} cm (la más ancha).` : '';
+      if (view) showLetterSheets();
+    }
+  }
+  function applyView() {
+    const p = radio('view') === 'print'; $('vDesign').hidden = p; $('vPrint').hidden = !p;
+    if (!p) $('shN').textContent = ''; else renderPrint();
+  }
+  document.querySelectorAll('input[name=view]').forEach(r => r.onchange = applyView);
+  document.querySelectorAll('input[name=pmode]').forEach(r => r.onchange = () => { renderPrint(); tr.touch(); });
+  document.querySelectorAll('details.acc').forEach(d => d.addEventListener('toggle', () => { // se abre uno solo
+    if (!d.open) return;
+    document.querySelectorAll('details.acc').forEach(x => { if (x !== d) x.open = false; });
+    setRadio('view', d.dataset.view); applyView();
+  }));
+  IDS.concat(CK).forEach(k => { if (k !== 'pxw') { $(k).oninput = build; $(k).onchange = build; } });
+
+  // ---------- exportar ----------
+  const svgText = () => { const c = svgEl.cloneNode(true); c.removeAttribute('style'); return '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(c); };
+  function rasterize(svgString, w, h) {
+    return new Promise((res, rej) => {
+      const img = new Image(), url = URL.createObjectURL(new Blob([svgString], { type: 'image/svg+xml' }));
+      img.onload = () => { const c = document.createElement('canvas'); c.width = Math.round(w); c.height = Math.round(h); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c); };
+      img.onerror = () => rej(new Error('No se pudo crear la imagen')); img.src = url;
+    });
+  }
+  const toCanvas = width => { const vb = svgEl.viewBox.baseVal; return rasterize(svgText(), width, vb.height * width / vb.width); };
+  const dl = (blob, name) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+  const fname = () => 'letras-' + ($('t1').value + '-' + $('t2').value).trim().replace(/[^\w\-áéíóúñÁÉÍÓÚÑ]+/g, '_');
+  const pw = () => Math.max(200, Math.min(8000, parseInt($('pxw').value) || 2400));
+  $('bSvg').onclick = () => { if (svgEl) dl(new Blob([svgText()], { type: 'image/svg+xml' }), fname() + '.svg'); };
+  $('bPng').onclick = async () => { if (svgEl) (await toCanvas(pw())).toBlob(b => dl(b, fname() + '.png'), 'image/png'); };
+  $('bGal').onclick = async () => {
+    if (!svgEl) return; const c = await toCanvas(pw()), b = await new Promise(r => c.toBlob(r, 'image/png'));
+    const id = await Galeria.add({ blob: b, name: 'Letras ' + $('t1').value + ' ' + $('t2').value, tag: 'sin fondo', sig: null });
+    $('status').textContent = id ? 'Guardado en la galería. Puedes usarlo en las otras herramientas.' : 'No se pudo guardar en la galería.';
+  };
+  async function pdfFromSvgs(svgs, W, H, label) { // un SVG por página; vectorial (con imagen de respaldo)
+    const { jsPDF } = window.jspdf, land = W > H, fmt = [Math.min(W, H), Math.max(W, H)], ori = land ? 'landscape' : 'portrait';
+    const doc = new jsPDF({ orientation: ori, unit: 'mm', format: fmt });
+    let mode = typeof doc.svg === 'function' ? 'vectorial' : 'imagen 300 ppp';
+    const host = document.createElement('div'); host.style.cssText = 'position:absolute;left:-9999px;top:0'; document.body.appendChild(host);
+    for (let k = 0; k < svgs.length; k++) {
+      if (k) doc.addPage(fmt, ori);
+      try { if (mode !== 'vectorial') throw 0; host.innerHTML = svgs[k]; await doc.svg(host.firstChild, { x: 0, y: 0, width: W, height: H }); }
+      catch (e) {
+        mode = 'imagen 300 ppp'; const pxW = Math.min(8000, W / 25.4 * 300), pxH = pxW * H / W;
+        const cv = await rasterize(svgs[k].replace(/(width|height)="[\d.]+mm"/g, (m, a) => a + '="' + Math.round(a === 'width' ? pxW : pxH) + '"'), pxW, pxH);
+        doc.addImage(cv.toDataURL('image/png'), 'PNG', 0, 0, W, H, 'p' + k, 'FAST');
+      }
+      $('status').textContent = `Página ${k + 1} de ${svgs.length}…`;
+    }
+    host.remove(); doc.save(fname() + (label || '') + '.pdf'); return mode;
+  }
+  $('bPdf').onclick = async () => {
+    if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
+    $('status').textContent = 'Preparando…'; await new Promise(r => setTimeout(r, 30));
+    const pm = radio('pmode');
+    if (pm === 'logo') {
+      const L = logoLayout(); if (!L.n) { alert('El logo no cabe en la hoja. Reduce el ancho.'); return; }
+      const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1)), mode = await pdfFromSvgs(Array(sheets).fill(logoPageSvg(L)), L.W, L.H, '-' + $('paper').value);
+      $('status').textContent = `PDF generado (${mode}): ${sheets} hoja(s) ${$('paper').value}, ${sheets * L.n} logos. Imprime a tamaño real (100 %).`;
+    } else if (pm === 'imprenta') {
+      const L = impLayout(), mode = await pdfFromSvgs([impSvg(L)], L.W, L.H, '-imprenta');
+      $('status').textContent = `PDF para imprenta (${mode}): una página de ${cm(L.W)} × ${cm(L.H)} cm. Envíalo tal cual.`;
+    } else {
+      const r = await bigPages(); if (!r) return; const mode = await pdfFromSvgs(r.pages.map(p => p.svg), r.W, r.H, '-letras-' + r.name);
+      $('status').textContent = `PDF generado (${mode}): ${r.pages.length} hojas ${r.name} (${r.pages.map(p => p.ch).join(' ')}). Imprime a tamaño real (100 %).`;
+    }
+  };
+  $('bSvgs').onclick = async () => {
+    const r = await bigPages(); if (!r) return;
+    for (let k = 0; k < r.pages.length; k++) { dl(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n' + r.pages[k].svg], { type: 'image/svg+xml' }), `${fname()}-${k + 1}-${r.pages[k].ch}.svg`); await new Promise(x => setTimeout(x, 400)); }
+    $('status').textContent = `${r.pages.length} archivos SVG (hoja ${r.name} ${r.land ? 'horizontal' : 'vertical'}). Si el navegador pregunta, permite descargas múltiples.`;
+  };
+
+  // ---------- guardar diseño / historial ----------
+  const tr = Galeria.tracker('logo', async () => {
+    if (!svgEl) return null; const o = read(), c = await toCanvas(320), data = { pmode: o.pmode }; IDS.forEach(k => data[k] = o[k]); CK.forEach(k => data[k] = o[k]);
+    const how = { logo: ' · ' + o.wcm + ' cm en ' + o.paper, letras: ' · una letra por hoja ' + o.paper, imprenta: ' · para imprenta ' + o.iw + ' cm' }[o.pmode];
+    return { name: (o.t1 + ' ' + o.t2).trim() || 'Letras', summary: o.font + ({ all: ' · con cinta', letters: ' · solo letras', ribbon: ' · solo cinta' }[o.mode] || '') + how, data, blobs: {}, thumb: c.toDataURL('image/png') };
+  });
+  async function openProject(p) {
+    const d = p.data; IDS.forEach(k => { if (d[k] !== undefined) $(k).value = d[k]; }); CK.forEach(k => { if (d[k] !== undefined) $(k).checked = d[k]; });
+    if (d.s2 !== undefined && d.s2v === undefined) $('s2v').value = d.s2;
+    if (d.mode === undefined && d.ribOn === false) $('mode').value = 'letters';
+    setRadio('pmode', d.pmode || 'logo'); await build(); tr.rebase();
+  }
+  $('bSave').onclick = async () => {
+    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', ($('t1').value + ' ' + $('t2').value).trim()); if (!nm) return;
+    const id = await tr.saveAs(nm.trim()), b = $('bSave'); if (!id) return;
+    b.textContent = '¡Guardado!'; setTimeout(() => b.textContent = 'Guardar diseño', 1800);
+  };
+  $('bHist').onclick = async () => { const p = await Galeria.history('logo'); if (p) openProject(p); };
+
+  const abrir = new URLSearchParams(location.search).get('abrir');
+  if (abrir) Galeria.getProject(abrir).then(p => p ? openProject(p) : build()); else build();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ajustes</title>
+<style>
+  :root{--ink:#12318f;--yel:#ffd60a;--red:#e3202a}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);background:linear-gradient(180deg,#5b9be0,#a9cdf5);display:flex;flex-direction:column;align-items:center;padding:32px 16px;gap:18px}
+  a.back{color:#fff;font-weight:700;text-decoration:none;align-self:flex-start;max-width:720px;width:100%;margin:0 auto}
+  h1{margin:0;font-size:clamp(1.8rem,5vw,2.6rem);color:var(--yel);-webkit-text-stroke:7px var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 #0a1f66}
+  .card{background:#fffdf4;border:6px solid var(--ink);border-radius:24px;padding:22px;box-shadow:0 8px 0 #0a1f66;width:100%;max-width:720px}
+  h2{margin:0 0 6px;font-size:1.2rem}
+  p{margin:6px 0;color:#44527a}
+  label{display:block;font-weight:700;margin:12px 0 4px}
+  input[type=password],input[type=text]{width:100%;min-height:48px;padding:8px 12px;border:2px solid var(--ink);border-radius:12px;font:inherit;background:#fff}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  button{min-height:46px;padding:10px 18px;border:none;border-radius:12px;font:inherit;font-weight:700;cursor:pointer;background:var(--red);color:#fff;box-shadow:0 4px 0 #8a0c14}
+  button.sec{background:#fff;color:var(--ink);box-shadow:0 4px 0 #9aa5b4;border:2px solid var(--ink)}
+  .ok{color:#0a7a35;font-weight:700;min-height:1.4em;margin-top:8px}
+  .path{font-family:ui-monospace,Menlo,monospace;background:#fff;border:2px dashed var(--ink);border-radius:10px;padding:10px 12px;word-break:break-all;margin:8px 0}
+  small{color:#667385}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+  <a class="back" href="decoraciones-toy-story.html">← Inicio</a>
+  <h1>⚙ Ajustes</h1>
+
+  <div class="card">
+    <h2>Carpeta donde se guarda todo</h2>
+    <div id="dirApp" hidden>
+      <p>Tus imágenes (con y sin fondo) y tus diseños se guardan en esta carpeta. Si la pones dentro de tu proyecto, puedes subirla a Git.</p>
+      <div class="path" id="dirPath">…</div>
+      <div class="row"><button id="dirChange">Cambiar carpeta…</button><button class="sec" id="dirOpen">Abrir carpeta</button><button class="sec" id="dirReset">Volver a la de por defecto</button></div>
+      <div class="ok" id="dirMsg"></div>
+      <small>Dentro hay <b>imagenes/</b> (originales y sin-fondo), <b>disenos/</b> y <b>datos/</b>. La clave de remove.bg no se guarda aquí, para que no acabe en Git.</small>
+    </div>
+    <div id="dirWeb" hidden>
+      <p>Estás usando las páginas en el navegador: ahí lo guardado queda dentro del navegador (y, si lo eliges en la Galería, también se copia a una carpeta).</p>
+      <p><b>La carpeta de datos configurable está en el programa de escritorio.</b> Ábrelo con <b>iniciar-app.command</b>.</p>
+    </div>
+  </div>
+
+  <div class="card" id="updCard" hidden>
+    <h2>Actualizar el programa</h2>
+    <p>Versión instalada: <b id="curVer">…</b></p>
+    <div class="row"><button id="updCheck">Buscar actualización</button></div>
+    <div class="ok" id="updMsg"></div>
+    <div id="updNotes" style="white-space:pre-wrap;color:#44527a;font-size:.9rem;margin-top:6px"></div>
+    <div class="row"><button id="updGo" hidden>Descargar e instalar</button></div>
+    <progress id="updBar" max="100" value="0" hidden style="width:100%;height:14px;margin-top:8px"></progress>
+  </div>
+
+  <div class="card">
+    <h2>Quitar fondos con remove.bg</h2>
+    <p><b>Cómo conseguir tu clave (gratis, 2 minutos):</b></p>
+    <ol style="margin:6px 0 10px;padding-left:22px;color:#44527a">
+      <li>Entra en <a href="https://www.remove.bg/api" target="_blank" rel="noopener" style="color:var(--ink);font-weight:700">remove.bg/api</a> y crea una cuenta gratuita.</li>
+      <li>Ve a «Mi panel» → «Clave de API» → <b>Nueva clave de API</b>.</li>
+      <li>Copia la clave y pégala aquí abajo. Pulsa <b>Guardar</b>.</li>
+    </ol>
+    <p>Pega aquí tu clave y el botón «Quitar fondo» de «Imágenes con tamaño exacto» la usará si la IA guardada no puede. La clave se consigue gratis en <b>remove.bg/api</b>; con la cuenta gratuita las imágenes salen en resolución reducida.</p>
+    <label for="rb">Clave de remove.bg</label>
+    <input type="password" id="rb" autocomplete="off" placeholder="Pega aquí tu clave">
+    <div class="row"><button id="save">Guardar</button><button class="sec" id="clear">Borrar clave</button></div>
+    <div class="ok" id="msg"></div>
+    <small>La clave se guarda solo en este programa o navegador. No se escribe en ningún archivo del proyecto ni se sube a Git. Si la usas, la imagen se envía a remove.bg para procesarla.</small>
+  </div>
+
+  <div class="card">
+    <h2>Copia de seguridad</h2>
+    <p>Guarda todas tus imágenes y diseños en un solo archivo, o recupéralos desde uno. Sirve para pasar lo que hiciste en el navegador al programa de escritorio.</p>
+    <div class="row"><button id="exp">Exportar todo…</button><button class="sec" id="impBtn">Importar…</button></div>
+    <input type="file" id="impFile" accept="application/json,.json" hidden>
+    <div class="ok" id="bkMsg"></div>
+  </div>
+
+  <script src="galeria.js?v=6"></script>
+  <script>
+    const K = 'toystory-removebg', $ = id => document.getElementById(id);
+    const show = t => { $('msg').textContent = t; };
+    try { $('rb').value = localStorage.getItem(K) || ''; if ($('rb').value) show('Hay una clave guardada.'); } catch (e) { show('No se pueden guardar ajustes aquí.'); }
+    $('save').onclick = () => { try { const v = $('rb').value.trim(); if (v) { localStorage.setItem(K, v); show('Guardada ✓'); } else { localStorage.removeItem(K); show('Clave borrada.'); } } catch (e) { show('No se pudo guardar.'); } };
+    $('clear').onclick = () => { try { localStorage.removeItem(K); } catch (e) { } $('rb').value = ''; show('Clave borrada.'); };
+
+    // Carpeta de datos (solo en el programa de escritorio)
+    (async () => {
+      const c = await Galeria.config();
+      $('dirApp').hidden = !c.electron; $('dirWeb').hidden = !!c.electron; if (!c.electron) return;
+      const paint = c => { $('dirPath').textContent = c.dataDir; $('dirReset').hidden = !!c.isDefault; };
+      paint(c);
+      $('dirChange').onclick = async () => { const r = await Galeria.chooseDataDir(); if (r.canceled) return; paint(await Galeria.config()); $('dirMsg').textContent = r.copied ? 'Carpeta cambiada y datos copiados ✓' : 'Carpeta cambiada ✓'; };
+      $('dirOpen').onclick = () => Galeria.openDataDir();
+      $('dirReset').onclick = async () => { await Galeria.resetDataDir(); paint(await Galeria.config()); $('dirMsg').textContent = 'Vuelve a la carpeta por defecto ✓'; };
+    })();
+
+
+    // Actualizaciones (solo en el programa de escritorio)
+    (async () => {
+      const c = await Galeria.config(); if (!c.electron) return; $('updCard').hidden = false;
+      let info = null; const msg = t => { $('updMsg').textContent = t; };
+      const check = async () => {
+        msg('Buscando…'); $('updGo').hidden = true; $('updNotes').textContent = ''; info = await window.ToyStory.call('upd.check'); $('curVer').textContent = info.current;
+        if (!info.ok) { msg(info.error); return; }
+        if (!info.hasUpdate) { msg('Ya tienes la última versión (' + info.current + ') ✓'); return; }
+        msg('Hay una versión nueva: ' + info.latest + (info.asset ? ' (' + Math.round(info.asset.size / 1048576) + ' MB)' : ''));
+        $('updNotes').textContent = (info.notes || '').slice(0, 600);
+        if (info.asset) $('updGo').hidden = false; else msg('Hay una versión nueva (' + info.latest + '), pero no hay instalador para este sistema.');
+      };
+      $('updCheck').onclick = check;
+      $('updGo').onclick = async () => {
+        $('updGo').hidden = true; $('updBar').hidden = false; $('updBar').value = 0; msg('Descargando…');
+        window.ToyStory.onProgress(p => { if (p.total) { $('updBar').value = Math.round(p.got / p.total * 100); msg('Descargando… ' + Math.round(p.got / 1048576) + ' de ' + Math.round(p.total / 1048576) + ' MB'); } });
+        try { await window.ToyStory.call('upd.download', { url: info.asset.url, name: info.asset.name }); $('updBar').hidden = true; msg('Descargada ✓ Se abrió el instalador en tu carpeta de Descargas. Cierra este programa y sigue los pasos para instalarla (en Mac: arrastra la app a Aplicaciones y reemplaza la anterior).'); }
+        catch (e) { $('updBar').hidden = true; $('updGo').hidden = false; msg('No se pudo descargar: ' + (e.message || e)); }
+      };
+      $('curVer').textContent = c.version || '';
+    })();
+
+    // Copia de seguridad
+    $('exp').onclick = async () => {
+      $('bkMsg').textContent = 'Preparando…';
+      try { const b = await Galeria.exportAll(), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'decoraciones-copia-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); $('bkMsg').textContent = 'Archivo generado ✓'; } catch (e) { $('bkMsg').textContent = 'No se pudo exportar: ' + e.message; }
+    };
+    $('impBtn').onclick = () => $('impFile').click();
+    $('impFile').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return; $('bkMsg').textContent = 'Importando…';
+      try { const r = await Galeria.importAll(f); $('bkMsg').textContent = `Importado ✓ (${r.ni} imágenes nuevas, ${r.np} diseños)`; } catch (err) { $('bkMsg').textContent = 'No se pudo importar: ' + err.message; }
+      e.target.value = '';
+    };
+  </script>
+</body>
+</html>

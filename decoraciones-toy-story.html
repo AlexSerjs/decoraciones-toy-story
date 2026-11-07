@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decoraciones Toy Story</title>
+<style>
+  :root{--ink:#12318f;--yel:#ffd60a;--red:#e3202a}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--ink);
+    background:linear-gradient(180deg,#5b9be0,#a9cdf5);display:flex;flex-direction:column;align-items:center;padding:32px 16px 60px}
+  h1{font-size:clamp(2rem,6vw,3.4rem);margin:0 0 6px;color:var(--yel);text-align:center;
+    -webkit-text-stroke:8px var(--ink);paint-order:stroke fill;text-shadow:0 5px 0 #0a1f66;letter-spacing:.02em}
+  p.sub{margin:0 0 24px;color:#fff;font-weight:600;text-align:center}
+  h2{color:#fff;margin:0 0 12px;text-shadow:0 2px 0 var(--ink);text-align:center}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;width:100%;max-width:820px}
+  a.card{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);background:#fffdf4;border:6px solid var(--ink);
+    border-radius:24px;padding:22px;box-shadow:0 8px 0 #0a1f66;transition:transform .12s}
+  a.card:hover{transform:translateY(-4px)}
+  a.card b{font-size:1.3rem}
+  a.card span{color:#44527a}
+  .btn{margin-top:10px;align-self:flex-start;background:var(--red);color:#fff;font-weight:700;padding:10px 18px;border-radius:12px;box-shadow:0 4px 0 #8a0c14}
+  /* mis diseños: grupos desplegables por tipo */
+  .misWrap{width:100%;max-width:820px;margin-top:40px}
+  details.grp{background:#fffdf4;border:5px solid var(--ink);border-radius:18px;box-shadow:0 6px 0 #0a1f66;margin-bottom:16px}
+  details.grp>summary{list-style:none;cursor:pointer;padding:14px 18px;font-weight:800;font-size:1.1rem;display:flex;align-items:center;gap:10px;min-height:56px}
+  details.grp>summary::-webkit-details-marker{display:none}
+  details.grp>summary .n{margin-left:auto;background:var(--ink);color:#fff;border-radius:999px;padding:2px 12px;font-size:.9rem}
+  details.grp>summary::after{content:"▾";transition:transform .15s}
+  details.grp[open]>summary::after{transform:rotate(180deg)}
+  details.grp[open]>summary{border-bottom:3px solid var(--ink)}
+  .mis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;padding:14px}
+  .it{position:relative}
+  .it a{display:block;text-decoration:none;color:var(--ink);background:#fff;border:3px solid var(--ink);border-radius:14px;padding:8px}
+  .it a:hover{transform:translateY(-3px)}
+  .it .t{height:84px;background:repeating-conic-gradient(#e6e9ee 0 25%,#f7f8fa 0 50%) 0 0/14px 14px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .it .t img{max-width:100%;max-height:100%}
+  .it b{display:block;font-size:.88rem;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .it small{display:block;color:#44527a;font-size:.74rem}
+  .it .x{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:var(--red);color:#fff;font-weight:800;cursor:pointer;line-height:1;opacity:0;transition:opacity .12s}
+  .it:hover .x,.it .x:focus{opacity:1}
+  @media(hover:none){.it .x{opacity:.9}}
+  .more{display:block;margin:0 14px 14px;width:calc(100% - 28px);min-height:44px;border:2px dashed var(--ink);background:#fff;color:var(--ink);border-radius:12px;font:inherit;font-weight:700;cursor:pointer}
+  .empty{color:#fff;font-weight:600;text-align:center}
+  a.gear{position:fixed;top:16px;right:16px;width:52px;height:52px;border-radius:50%;background:#fffdf4;border:4px solid var(--ink);box-shadow:0 4px 0 #0a1f66;display:flex;align-items:center;justify-content:center;font-size:1.6rem;text-decoration:none;color:var(--ink);z-index:10;transition:transform .12s}
+  a.gear:hover{transform:rotate(30deg)}
+  @media(max-width:700px){body{padding-top:84px}}
+</style>
+</head>
+<body>
+  <a class="gear" href="ajustes.html" title="Ajustes" aria-label="Ajustes">⚙</a>
+  <h1>Decoraciones Toy Story</h1>
+  <p class="sub">Elige una herramienta o abre uno de tus diseños</p>
+
+  <h2>Herramientas</h2>
+  <div class="grid">
+    <a class="card" href="etiquetas-botella.html">
+      <b>Etiquetas de botella</b>
+      <span>Etiquetas de 22 × 5 cm, 4 por hoja A4, con foto en círculo.</span>
+      <div class="btn">Nuevo</div>
+    </a>
+    <a class="card" href="decoracion-circulo.html">
+      <b>Círculos de decoración</b>
+      <span>Tu imagen PNG sobre cielo con nubes, en círculos del tamaño que quieras, llenando la hoja A4.</span>
+      <div class="btn">Nuevo</div>
+    </a>
+    <a class="card" href="decoracion-imagenes.html">
+      <b>Imágenes con tamaño exacto</b>
+      <span>Quita el fondo, pon el ancho en cm (el alto sale solo) y llena la hoja A4.</span>
+      <div class="btn">Nuevo</div>
+    </a>
+    <a class="card" href="generador-letras.html">
+      <b>Letras Toy Story</b>
+      <span>Escribe un nombre y descarga las letras amarillas con contorno azul y cinta roja, en SVG o PNG.</span>
+      <div class="btn">Nuevo</div>
+    </a>
+    <a class="card" href="galeria.html">
+      <b>Galería</b>
+      <span>Todas tus imágenes guardadas, con y sin fondo, para reutilizarlas.</span>
+      <div class="btn">Abrir</div>
+    </a>
+  </div>
+
+  <div class="misWrap">
+    <h2>Mis diseños</h2>
+    <div id="mis"></div>
+  </div>
+
+  <script src="galeria.js?v=6"></script>
+  <script>
+    const TIPOS = [
+      ['botella', 'etiquetas-botella.html', 'Etiquetas de botella'],
+      ['circulo', 'decoracion-circulo.html', 'Círculos de decoración'],
+      ['imagenes', 'decoracion-imagenes.html', 'Imágenes con tamaño exacto'],
+      ['logo', 'generador-letras.html', 'Letras Toy Story']
+    ];
+    const VISIBLES = 8, OPEN_KEY = 'toystory-grupos-abiertos';
+    const abiertos = () => { try { return JSON.parse(localStorage.getItem(OPEN_KEY) || '[]'); } catch (e) { return []; } };
+    const guardaAbiertos = v => { try { localStorage.setItem(OPEN_KEY, JSON.stringify(v)); } catch (e) { } };
+
+    function item(p, file) {
+      const d = document.createElement('div'); d.className = 'it';
+      d.innerHTML = '<a><div class="t"><img alt=""></div><b></b><small></small></a><button class="x" title="Quitar de mis diseños" aria-label="Quitar">×</button>';
+      const a = d.querySelector('a'); a.href = file + '?abrir=' + encodeURIComponent(p.id);
+      if (p.thumb) d.querySelector('img').src = p.thumb;
+      d.querySelector('b').textContent = (p.saved ? '★ ' : '') + p.name;
+      d.querySelector('small').textContent = (p.saved ? '' : 'Borrador · ') + p.summary;
+      d.querySelector('.x').onclick = async () => { if (confirm('¿Quitar "' + p.name + '" de tus diseños?')) { await Galeria.removeProject(p.id); render(); } };
+      return d;
+    }
+    async function render() {
+      const box = document.getElementById('mis'); box.innerHTML = '';
+      let all = []; try { all = await Galeria.listProjects(); } catch (e) { }
+      if (!all.length) { box.innerHTML = '<p class="empty">Todavía no hay diseños. Abre una herramienta y pulsa «Guardar diseño».</p>'; return; }
+      const open = abiertos();
+      TIPOS.forEach(([tool, file, title]) => {
+        const mine = all.filter(p => p.tool === tool).sort((a, b) => (b.saved - a.saved) || (b.updated - a.updated));
+        if (!mine.length) return;
+        const g = document.createElement('details'); g.className = 'grp'; g.open = open.includes(tool);
+        g.innerHTML = '<summary><span></span><span class="n"></span></summary><div class="mis"></div>';
+        g.querySelector('summary span').textContent = title; g.querySelector('.n').textContent = mine.length;
+        const grid = g.querySelector('.mis'); let shown = 0;
+        const more = document.createElement('button'); more.className = 'more';
+        const paint = () => { mine.slice(shown, shown + VISIBLES).forEach(p => grid.appendChild(item(p, file))); shown = Math.min(mine.length, shown + VISIBLES); more.hidden = shown >= mine.length; more.textContent = 'Ver más (' + (mine.length - shown) + ' restantes)'; };
+        more.onclick = paint; paint();
+        g.append(more);
+        g.addEventListener('toggle', () => { const cur = abiertos().filter(t => t !== tool); if (g.open) cur.push(tool); guardaAbiertos(cur); });
+        box.appendChild(g);
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

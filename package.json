@@ -1,0 +1,68 @@
+{
+  "name": "decoraciones-toy-story",
+  "productName": "Decoraciones Toy Story",
+  "version": "1.0.4",
+  "description": "Etiquetas, círculos, imágenes y letras Toy Story para imprimir",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prueba": "TS_SELFTEST=1 electron .",
+    "empaquetar": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "author": "Roberto Campo",
+  "license": "UNLICENSED",
+  "private": true,
+  "build": {
+    "appId": "com.decoraciones.toystory",
+    "productName": "Decoraciones Toy Story",
+    "files": [
+      "main.js",
+      "preload.js",
+      "galeria.js",
+      "*.html",
+      "package.json",
+      "build/icon.png"
+    ],
+    "artifactName": "Decoraciones-Toy-Story-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.graphics-design",
+      "identity": null
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
+    "afterPack": "build/afterPack.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AlexSerjs/decoraciones-toy-story.git"
+  }
+}

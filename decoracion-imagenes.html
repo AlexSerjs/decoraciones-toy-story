@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imágenes con tamaño exacto</title>
+<style>
+  :root{--bg:#f3f5f8;--card:#fff;--ink:#1d2733;--mut:#667385;--acc:#1b6fe0;--acc2:#0f4fa8;--line:#d9dfe7}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  h1{font-size:1.25rem;margin:0 0 12px}
+  h2{font-size:.95rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  a.back{color:var(--acc);font-weight:600;text-decoration:none}
+  .app{display:grid;grid-template-columns:400px 1fr;gap:16px;padding:16px;max-width:1500px;margin:auto}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+  .panel,.preview{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .btn,label.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 16px;border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+  .btn:hover{background:var(--acc2)}
+  .btn.sec{background:#fff;color:var(--acc)}
+  .btn.sec:hover{background:#eef4fd}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn.block{width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .row>*{flex:1}
+  .f label,.ctl label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut);margin-bottom:4px}
+  .ctl{margin:10px 0}
+  .ctl output{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;height:28px}
+  input[type=number],select{width:100%;min-height:46px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+  input[readonly]{background:#eef1f5;color:var(--mut)}
+  input[type=file]{display:none}
+  .g3{display:grid;grid-template-columns:1fr 46px 1fr;gap:8px;align-items:end}
+  .lock{min-height:46px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:1.3rem;cursor:pointer}
+  .lock.on{background:#e8f1fd;border-color:var(--acc)}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chk{display:flex;gap:8px;align-items:center;padding:6px 0;cursor:pointer}
+  .chk input{width:20px;height:20px}
+  .help{background:#e8f1fd;border:1px solid #b9d3f6;color:#12417f;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.92rem}
+  .info{margin-top:10px;font-weight:600}
+  .warn{background:#fff4d6;border:1px solid #f0c24b;color:#6b4d00;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:.9rem}
+  .hint{color:var(--mut);font-size:.85rem;margin-top:6px}
+  .stage{background:repeating-conic-gradient(#e6e9ee 0 25%,#f7f8fa 0 50%) 0 0/20px 20px;border-radius:8px;padding:10px;display:flex;justify-content:center}
+  canvas{max-width:100%;height:auto;display:block}
+  #src{max-height:340px;width:auto}
+  #page{box-shadow:0 1px 8px #0004;background:#fff}
+  .sw{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .sw button{width:40px;height:40px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #9aa5b4;cursor:pointer}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><a class="back" href="decoraciones-toy-story.html">← Inicio</a><span style="display:flex;gap:8px"><button class="btn" id="bSave" style="min-height:40px">Guardar diseño</button><button class="btn sec" id="bHist" style="min-height:40px">Historial</button></span></div>
+    <h1>Imágenes con tamaño exacto</h1>
+
+    <div class="card">
+      <h2>1. Imagen</h2>
+      <label class="btn block" for="imgFile">Subir imagen (PNG, JPG, WebP)</label>
+      <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp">
+      <button class="btn sec block" id="bGal" style="margin-top:8px">Elegir de la galería</button>
+      <div class="hint" id="galInfo">Las imágenes y los fondos quitados se guardan solos en la galería.</div>
+      <button class="btn block" id="bRemove" disabled style="margin-top:10px">Quitar fondo</button>
+      <input type="range" id="tol" min="5" max="150" value="40" hidden><output id="tolO" hidden>40</output>
+      <label class="chk"><input type="checkbox" id="trim" checked> Recortar al contorno de la imagen</label>
+      <button class="btn sec block" id="bUndo" disabled>Volver a la original</button>
+      <div class="hint" id="bgInfo">Quita el fondo con remove.bg (necesitas tu clave gratuita: los pasos están en <a href="ajustes.html">⚙ Ajustes</a>). Si el fondo es de un solo color, lo quita solo sin clave.</div>
+      <div class="warn" id="bgWarn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>2. Tamaño en la hoja</h2>
+      <div class="g3 f">
+        <div><label for="wcm">Ancho (cm)</label><input type="number" id="wcm" value="5" min="0.5" max="29" step="0.1"></div>
+        <button class="lock on" id="lock" title="Bloquear proporción" aria-pressed="true">🔒</button>
+        <div><label for="hcm">Alto (cm)</label><input type="number" id="hcm" min="0.5" max="29" step="0.1" readonly></div>
+      </div>
+      <div class="hint" id="lockTxt">Proporción bloqueada: el alto se calcula solo.</div>
+
+      <div class="info" id="sizeInfo"></div>
+      <div class="warn" id="dpiWarn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Fondo de color</h2>
+      <label class="chk"><input type="checkbox" id="bord"> Poner un fondo de color alrededor de la imagen</label>
+      <div id="bordOpts" hidden>
+        <div class="f"><label for="bcol">Color</label><input type="color" id="bcol" value="#ffffff" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+        <div class="sw" id="swatches" aria-label="Colores rápidos"></div>
+        <div class="f" style="margin-top:8px"><label for="bmm">Grosor del fondo (mm)</label><input type="number" id="bmm" value="2" min="0.5" max="20" step="0.5"></div>
+        <div class="hint">No es un cuadrado: rodea el contorno de la imagen, como una pegatina. El fondo cuenta dentro del tamaño total.</div>
+      </div>
+      <div class="hint" id="bordHint">Sin fondo: la imagen se imprime sola.</div>
+    </div>
+
+    <div class="card">
+      <h2>4. Hoja A4</h2>
+      <div class="g2 f">
+        <div><label for="orient">Orientación</label>
+          <select id="orient"><option value="auto">Automática (más imágenes)</option><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+        <div><label for="sheets">Nº de hojas</label><input type="number" id="sheets" value="1" min="1" max="100"></div>
+        <div><label for="margin">Margen hoja (mm)</label><input type="number" id="margin" value="5" min="0" max="30"></div>
+        <div><label for="gap">Separación (mm)</label><input type="number" id="gap" value="3" min="0" max="30"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="cut"> Marco de corte gris fino</label>
+      <div class="info" id="count"></div>
+      <div class="warn" id="warn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>5. Exportar</h2>
+      <button class="btn block" id="bPdf" disabled>Descargar PDF (A4)</button>
+      <button class="btn sec block" id="bPng" disabled style="margin-top:8px">Descargar PNG recortado</button>
+      <div class="help" style="margin-top:10px">Imprime a tamaño real (100 %), sin ajustar a página.</div>
+      <div class="hint" id="status"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="card">
+      <h2>Imagen <span id="srcDim" style="text-transform:none;letter-spacing:0"></span></h2>
+      <div class="stage"><canvas id="src" width="10" height="10"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Hoja A4 (vista previa)</h2>
+      <div class="stage"><canvas id="page"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="galeria.js?v=6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let orig = null, proc = null, srcBlob = null, locked = true;
+  const mk = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const ratio = () => proc ? proc.width / proc.height : 1;
+  const bmm = () => $('bord').checked ? Math.max(0, Math.min(+$('bmm').value || 0, ((+$('wcm').value || 1) * 10) / 2 - 1)) : 0;
+  // imagen + borde que sigue el contorno (como una pegatina); widthPx = ancho total en píxeles
+  function compose(widthPx) {
+    const T = (+$('wcm').value || 1) * 10, Hh = (+$('hcm').value || 1) * 10, b = Math.min(bmm(), Math.min(T, Hh) / 2 - .5), s = widthPx / T;
+    const iw = Math.max(1, Math.round((T - 2 * b) * s)), ih = Math.max(1, Math.round((Hh - 2 * b) * s)), bp = Math.max(0, b * s);
+    const img = mk(iw, ih), ix = img.getContext('2d'); ix.imageSmoothingQuality = 'high'; ix.drawImage(proc, 0, 0, iw, ih);
+    if (bp < .5) return img;
+    const pad = Math.ceil(bp), out = mk(iw + 2 * pad, ih + 2 * pad), ox = out.getContext('2d');
+    const sil = mk(iw, ih), sx = sil.getContext('2d'); sx.drawImage(img, 0, 0); sx.globalCompositeOperation = 'source-in'; sx.fillStyle = $('bcol').value; sx.fillRect(0, 0, iw, ih);
+    const steps = Math.min(120, Math.max(24, Math.ceil(bp * 3)));
+    for (const f of [1, .66, .33]) for (let i = 0; i < steps; i++) { const a = i / steps * 2 * Math.PI; ox.drawImage(sil, pad + Math.cos(a) * bp * f, pad + Math.sin(a) * bp * f); }
+    ox.drawImage(sil, pad, pad); ox.drawImage(img, pad, pad); return out;
+  }
+
+  function trimCanvas(c) { // recorta al rectángulo de píxeles no transparentes
+    const w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 8) {
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 < 0 || (x0 === 0 && y0 === 0 && x1 === w - 1 && y1 === h - 1)) return c;
+    const o = mk(x1 - x0 + 1, y1 - y0 + 1); o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height); return o;
+  }
+  const finish = c => { proc = $('trim').checked ? trimCanvas(c) : c; refresh(true); };
+
+  function removeColor(c, tol) { // rellena desde los bordes los píxeles parecidos al color de las esquinas
+    const w = c.width, h = c.height, ctx = c.getContext('2d'), img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const px = (x, y) => (y * w + x) * 4, cs = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]];
+    let r = 0, g = 0, b = 0; cs.forEach(([x, y]) => { const i = px(x, y); r += d[i]; g += d[i + 1]; b += d[i + 2]; });
+    r /= 4; g /= 4; b /= 4;
+    const t2 = tol * tol, seen = new Uint8Array(w * h), stack = [];
+    const ok = i => { const dr = d[i] - r, dg = d[i + 1] - g, db = d[i + 2] - b; return dr * dr + dg * dg + db * db <= t2 * 3 / 3; };
+    const push = (x, y) => { const k = y * w + x; if (!seen[k] && ok(k * 4)) { seen[k] = 1; stack.push(k); } };
+    for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); }
+    for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+    while (stack.length) {
+      const k = stack.pop(), x = k % w, y = (k - x) / w; d[k * 4 + 3] = 0;
+      if (x > 0) push(x - 1, y); if (x < w - 1) push(x + 1, y); if (y > 0) push(x, y - 1); if (y < h - 1) push(x, y + 1);
+    }
+    ctx.putImageData(img, 0, 0); return c;
+  }
+
+  let curName = 'imagen', curSig = null;
+  const base = n => n.replace(/\.[^.]+$/, '');
+  function saveProc(suffix, tag) {
+    if (!proc) return;
+    proc.toBlob(async b => {
+      const id = await Galeria.add({ blob: b, name: base(curName) + ' (' + suffix + ')', tag, sig: curSig ? curSig + '|' + suffix : null });
+      $('galInfo').textContent = id ? 'Guardado en la galería: ' + base(curName) + ' (' + suffix + ')' : 'No se pudo guardar en la galería.';
+    }, 'image/png');
+  }
+  function load(file, opts = {}) {
+    tr.fork();
+    curName = opts.name || file.name || 'imagen';
+    curSig = opts.save === false ? null : 'f:' + file.name + ':' + file.size + ':' + file.lastModified;
+    if (opts.save !== false) Galeria.add({ blob: file, name: curName, tag: 'original', sig: curSig }).then(id => { if (id) $('galInfo').textContent = 'Guardada en la galería: ' + curName; });
+    const im = new Image();
+    im.onload = () => {
+      orig = mk(im.naturalWidth, im.naturalHeight); orig.getContext('2d').drawImage(im, 0, 0);
+      srcBlob = file; ['bRemove', 'bUndo', 'bPdf', 'bPng'].forEach(i => $(i).disabled = false);
+      const c = mk(orig.width, orig.height); c.getContext('2d').drawImage(orig, 0, 0); finish(c);
+    };
+    im.onerror = () => alert('No se pudo leer la imagen'); im.src = URL.createObjectURL(file);
+  }
+  $('imgFile').onchange = e => { if (e.target.files[0]) load(e.target.files[0]); e.target.value = ''; };
+  // La clave de remove.bg se pone en ajustes.html (se guarda solo en este navegador)
+  const apiKey = () => { try { return (localStorage.getItem('toystory-removebg') || '').trim(); } catch (e) { return ''; } };
+  $('bGal').onclick = async () => { const r = await Galeria.pick(); if (r) load(r.blob, { name: r.name, save: false }); };
+  $('bUndo').onclick = () => { if (!orig) return; const c = mk(orig.width, orig.height); c.getContext('2d').drawImage(orig, 0, 0); finish(c); };
+  $('trim').onchange = () => { if (proc) finish(proc); };
+
+  // ---- Quitar fondo: un solo botón que prueba los métodos en orden ----
+  const loadScript = src => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = () => { el.remove(); res(); }; el.onerror = () => { el.remove(); rej(new Error('falta ' + src)); }; document.head.appendChild(el); });
+  let shimOn = false;
+  function installShim() { // sirve el modelo guardado en ia-modelo/ (funciona también abriendo el .html con doble clic)
+    if (shimOn) return; shimOn = true; const of = window.fetch, BASE = 'https://ia.local/';
+    window.fetch = async function (u, o) {
+      const url = String(u && u.url || u); if (!url.startsWith(BASE)) return of.call(this, u, o);
+      const name = url.slice(BASE.length).split('?')[0];
+      if (name === 'resources.json') { await loadScript('ia-modelo/resources.js'); return new Response(JSON.stringify(window.__IA_RES), { headers: { 'content-type': 'application/json' } }); }
+      if (!(window.__IA && window.__IA[name])) await loadScript('ia-modelo/js/' + name + '.js');
+      const bin = atob(window.__IA[name]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      delete window.__IA[name]; return new Response(u8, { headers: { 'content-type': 'application/octet-stream' } });
+    };
+  }
+  const errMsg = e => String((e && e.message) || e).replace(/^Error:\s*/, '').slice(0, 140);
+  async function aiRemove(w) {
+    const mod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm'); installShim(); let last = null;
+    for (const publicPath of ['https://ia.local/']) {
+      try { return await mod.removeBackground(srcBlob, { publicPath, model: 'isnet_quint8', progress: (k, cur, tot) => { w.textContent = `Quitando el fondo con la IA… ${tot ? Math.round(cur / tot * 100) : 0} %`; } }); } catch (e) { last = e; }
+    }
+    throw last;
+  }
+  async function apiRemove() {
+    const fd = new FormData(); fd.append('image_file', srcBlob, curName || 'imagen.png'); fd.append('size', 'auto'); fd.append('format', 'png');
+    const r = await fetch('https://api.remove.bg/v1.0/removebg', { method: 'POST', headers: { 'X-Api-Key': apiKey() }, body: fd });
+    if (!r.ok) { let m = 'error ' + r.status; try { const j = await r.json(); m = (j.errors && j.errors[0] && j.errors[0].title) || m; } catch (e) { } throw new Error(/api key/i.test(m) ? 'la clave no es válida (revísala en ⚙ Ajustes)' : m); }
+    return r.blob();
+  }
+  function uniformBg(c) { // ¿el fondo es de un solo color? (cuatro esquinas y mitades de los bordes parecidos)
+    const w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data, pts = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1], [w >> 1, 0], [w >> 1, h - 1], [0, h >> 1], [w - 1, h >> 1]];
+    const cols = pts.map(([x, y]) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; });
+    if (cols.some(q => q[3] < 250)) return false; // ya tiene transparencia
+    return cols.every(q => Math.hypot(q[0] - cols[0][0], q[1] - cols[0][1], q[2] - cols[0][2]) < 40);
+  }
+  const toCanvas = async blob => { const im = await createImageBitmap(blob), c = mk(im.width, im.height); c.getContext('2d').drawImage(im, 0, 0); return c; };
+  const modeloLocal = async () => { try { return (await fetch('ia-modelo/resources.js', { method: 'HEAD' })).ok; } catch (e) { return false; } };
+  $('bRemove').onclick = async () => {
+    if (!srcBlob) return; const w = $('bgWarn'), btn = $('bRemove'), fails = []; w.hidden = false; btn.disabled = true;
+    const done = (c, how) => { w.hidden = true; finish(c); saveProc('sin fondo ' + how, 'sin fondo'); };
+    try {
+      // 1) remove.bg (si hay clave en Ajustes)  2) IA guardada en ia-modelo/ (si existe)  3) color, si el fondo es liso
+      if (apiKey()) { w.textContent = 'Quitando el fondo con remove.bg…'; try { return done(await toCanvas(await apiRemove()), 'remove.bg'); } catch (e) { fails.push('remove.bg: ' + errMsg(e)); } }
+      if (await modeloLocal()) { w.textContent = 'Quitando el fondo con la IA… (la primera vez puede tardar un poco)'; try { return done(await toCanvas(await aiRemove(w)), 'IA'); } catch (e) { fails.push('IA local: ' + errMsg(e)); } }
+      const c = mk(orig.width, orig.height); c.getContext('2d').drawImage(orig, 0, 0);
+      if (uniformBg(c)) return done(removeColor(c, 40), 'color');
+      w.innerHTML = (fails.length ? 'No se pudo quitar el fondo (' + fails.join(' · ') + '). ' : '') + (apiKey() ? '' : 'Para quitar fondos hace falta una clave gratuita de remove.bg: los pasos están en <a href="ajustes.html">⚙ Ajustes</a>. ') + 'También puedes subir un PNG que ya no tenga fondo.';
+    } finally { btn.disabled = false; }
+  };
+
+  // Tamaño con proporción bloqueada
+  function syncH() {
+    if (locked) {
+      const T = (+$('wcm').value || 1) * 10, b = bmm(), hmm = proc ? Math.max(1, T - 2 * b) * proc.height / proc.width + 2 * b : T / ratio();
+      $('hcm').value = (hmm / 10).toFixed(2).replace(/\.?0+$/, '');
+    }
+    $('hcm').readOnly = locked;
+    $('lock').classList.toggle('on', locked); $('lock').textContent = locked ? '🔒' : '🔓'; $('lock').setAttribute('aria-pressed', locked);
+    $('lockTxt').textContent = locked ? 'Proporción bloqueada: el alto se calcula solo.' : 'Desbloqueado: puedes cambiar el alto, pero la imagen se deformará.';
+  }
+  $('lock').onclick = () => { locked = !locked; syncH(); refresh(); };
+  $('wcm').oninput = () => { syncH(); refresh(); };
+  $('hcm').oninput = refresh;
+  [['Blanco', '#ffffff'], ['Amarillo', '#ffd60a'], ['Azul', '#12318f'], ['Rojo', '#e3202a'], ['Celeste', '#7fb6ee'], ['Negro', '#111111']].forEach(([n, c]) => { const b = document.createElement('button'); b.type = 'button'; b.title = n; b.setAttribute('aria-label', n); b.style.background = c; b.onclick = () => { $('bcol').value = c; $('bcol').dispatchEvent(new Event('input')); }; $('swatches').appendChild(b); });
+  ['bord', 'bcol', 'bmm'].forEach(id => { $(id).oninput = () => { $('bordOpts').hidden = !$('bord').checked; $('bordHint').hidden = $('bord').checked; syncH(); refresh(); }; $(id).onchange = $(id).oninput; });
+  ['orient', 'margin', 'gap', 'cut', 'sheets'].forEach(id => { $(id).oninput = refresh; $(id).onchange = refresh; });
+
+  function layout() {
+    const w = (+$('wcm').value || 1) * 10, h = (+$('hcm').value || 1) * 10, m = +$('margin').value || 0, g = +$('gap').value || 0, o = $('orient').value;
+    const calc = (W, H) => { const cols = Math.max(0, Math.floor((W - 2 * m + g) / (w + g))), rows = Math.max(0, Math.floor((H - 2 * m + g) / (h + g))); return { W, H, cols, rows, n: cols * rows }; };
+    const v = calc(210, 297), hz = calc(297, 210), L = o === 'v' ? v : o === 'h' ? hz : (hz.n > v.n ? hz : v);
+    L.w = w; L.h = h; L.g = g;
+    L.x0 = (L.W - (L.cols * w + (L.cols - 1) * g)) / 2; L.y0 = (L.H - (L.rows * h + (L.rows - 1) * g)) / 2; return L;
+  }
+
+  const sc = $('src'), pg = $('page'), pctx = pg.getContext('2d');
+  function refresh(newImg) {
+    tr.touch();
+    if (newImg === true) syncH();
+    if (proc) {
+      sc.width = proc.width; sc.height = proc.height; sc.getContext('2d').drawImage(proc, 0, 0);
+      $('srcDim').textContent = `(${proc.width} × ${proc.height} px)`;
+    }
+    const L = layout(), k = 3; pg.width = L.W * k; pg.height = L.H * k;
+    pctx.fillStyle = '#fff'; pctx.fillRect(0, 0, pg.width, pg.height);
+    const wc = +$('wcm').value, hc = +$('hcm').value;
+    $('sizeInfo').textContent = `Tamaño: ${wc} × ${hc} cm`;
+    $('count').textContent = L.n ? `Caben ${L.n} por hoja (${L.cols} × ${L.rows}), hoja ${L.W > L.H ? 'horizontal' : 'vertical'}.` : '';
+    $('warn').hidden = L.n > 0; if (!L.n) $('warn').textContent = 'No cabe en la hoja con ese margen. Reduce el tamaño.';
+    const dw = $('dpiWarn');
+    if (proc) { const dpi = Math.round(proc.width / ((wc - 2 * bmm() / 10) / 2.54)); dw.hidden = dpi >= 150; dw.textContent = `La imagen quedaría a ${dpi} ppp: se verá pixelada. Usa una imagen más grande o reduce el tamaño.`; } else dw.hidden = true;
+    if (!proc || !L.n) return;
+    const sprite = compose(Math.max(60, Math.round(L.w * k * 2)));
+    for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+      const x = L.x0 + c * (L.w + L.g), y = L.y0 + r * (L.h + L.g);
+      pctx.drawImage(sprite, x * k, y * k, L.w * k, L.h * k);
+      if ($('cut').checked) { pctx.strokeStyle = '#999'; pctx.lineWidth = 1; pctx.strokeRect(x * k, y * k, L.w * k, L.h * k); }
+    }
+  }
+
+  function outCanvas() { // a 300 ppp como máximo (sin ampliar la imagen original), con el tamaño final en cm
+    const T = (+$('wcm').value || 1) * 10, b = bmm();
+    return compose(Math.min(Math.round(T / 25.4 * 300), Math.round(T * proc.width / Math.max(1, T - 2 * b))));
+  }
+
+  $('bPng').onclick = () => outCanvas().toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'imagen-recortada.png'; a.click(); }, 'image/png');
+  $('bPdf').onclick = async () => {
+    if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
+    const L = layout(); if (!L.n) { alert('No cabe en la hoja.'); return; }
+    const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1));
+    $('status').textContent = 'Generando PDF…'; await new Promise(r => setTimeout(r, 30));
+    const url = outCanvas().toDataURL('image/png'), { jsPDF } = window.jspdf, ori = L.W > L.H ? 'landscape' : 'portrait';
+    const doc = new jsPDF({ orientation: ori, unit: 'mm', format: 'a4' });
+    for (let p = 0; p < sheets; p++) {
+      if (p) doc.addPage('a4', ori);
+      doc.setDrawColor(150); doc.setLineWidth(0.15);
+      for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+        const x = L.x0 + c * (L.w + L.g), y = L.y0 + r * (L.h + L.g);
+        doc.addImage(url, 'PNG', x, y, L.w, L.h, 'img', 'FAST');
+        if ($('cut').checked) doc.rect(x, y, L.w, L.h, 'S');
+      }
+    }
+    doc.save('imagenes.pdf'); $('status').textContent = `PDF generado: ${sheets} hoja(s), ${sheets * L.n} imágenes.`;
+  };
+
+  // Historial
+  const IDS = ['wcm', 'orient', 'margin', 'gap', 'sheets', 'tol', 'bcol', 'bmm'];
+  const tr = Galeria.tracker('imagenes', async () => {
+    if (!proc || !srcBlob) return null;
+    const pb = await new Promise(r => proc.toBlob(r, 'image/png')), k = Math.min(1, 160 / Math.max(proc.width, proc.height)), th = mk(Math.max(1, Math.round(proc.width * k)), Math.max(1, Math.round(proc.height * k)));
+    th.getContext('2d').drawImage(proc, 0, 0, th.width, th.height);
+    const data = { hcm: $('hcm').value, locked, cut: $('cut').checked, trim: $('trim').checked, bord: $('bord').checked }; IDS.forEach(i => data[i] = $(i).value);
+    return { name: base(curName), summary: $('wcm').value + ' × ' + $('hcm').value + ' cm · ' + (layout().n || 0) + ' por hoja', data, blobs: { orig: srcBlob, proc: pb }, thumb: th.toDataURL('image/png') };
+  });
+  $('bSave').onclick = async () => {
+    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', base(curName)); if (!nm) return;
+    const id = await tr.saveAs(nm.trim()); const b = $('bSave');
+    if (!id) { alert('Primero sube una imagen.'); return; }
+    b.textContent = '¡Guardado!'; setTimeout(() => b.textContent = 'Guardar diseño', 1800);
+  };
+  async function openProject(p) {
+    const d = p.data;
+    const [io, ip] = await Promise.all([createImageBitmap(p.blobs.orig), createImageBitmap(p.blobs.proc)]);
+    orig = mk(io.width, io.height); orig.getContext('2d').drawImage(io, 0, 0); proc = mk(ip.width, ip.height); proc.getContext('2d').drawImage(ip, 0, 0);
+    srcBlob = p.blobs.orig; curName = p.name; curSig = null; ['bRemove', 'bUndo', 'bPdf', 'bPng'].forEach(i => $(i).disabled = false);
+    IDS.forEach(i => { if (d[i] !== undefined) $(i).value = d[i]; }); $('tolO').textContent = $('tol').value;
+    $('cut').checked = !!d.cut; $('trim').checked = d.trim !== false; locked = d.locked !== false; $('hcm').value = d.hcm;
+    $('bord').checked = !!d.bord; $('bordOpts').hidden = !d.bord;
+    syncH(); refresh(); tr.rebase();
+  }
+  $('bHist').onclick = async () => { const p = await Galeria.history('imagenes'); if (p) openProject(p); };
+  syncH(); refresh();
+  const abrir = new URLSearchParams(location.search).get('abrir'); if (abrir) Galeria.getProject(abrir).then(p => p && openProject(p));
+})();
+</script>
+</body>
+</html>

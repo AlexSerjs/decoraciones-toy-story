@@ -1,0 +1,4 @@
+node_modules/
+dist/
+ia-modelo/
+.DS_Store

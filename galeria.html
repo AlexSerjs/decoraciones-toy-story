@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galería</title>
+<style>
+  body{margin:0;min-height:100vh;font:16px/1.4 system-ui,sans-serif;background:#f3f5f8;color:#1d2733;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center}
+  a{color:#1b6fe0;font-weight:600;text-decoration:none}
+  button{min-height:48px;padding:10px 20px;border:1px solid #1b6fe0;background:#1b6fe0;color:#fff;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+  p{max-width:440px;color:#667385;margin:0}
+</style>
+</head>
+<body>
+  <a href="decoraciones-toy-story.html">← Inicio</a>
+  <h1 style="margin:0">Galería de imágenes</h1>
+  <p>Aquí están todas las imágenes que has usado, con y sin fondo. Pulsa una para descargarla o la × para borrarla. Se guardan en este navegador.</p>
+  <button id="b">Abrir galería</button>
+  <script src="galeria.js?v=6"></script>
+  <script>
+    document.getElementById('b').onclick = () => Galeria.manage();
+    Galeria.manage();
+  </script>
+</body>
+</html>

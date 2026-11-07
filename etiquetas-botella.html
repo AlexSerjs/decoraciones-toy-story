@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etiquetas de botella de agua</title>
+<style>
+  :root{--bg:#f3f5f8;--card:#fff;--ink:#1d2733;--mut:#667385;--acc:#1b6fe0;--acc2:#0f4fa8;--line:#d9dfe7}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  h1{font-size:1.25rem;margin:0 0 12px}
+  h2{font-size:.95rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  .app{display:grid;grid-template-columns:380px 1fr;gap:16px;padding:16px;max-width:1500px;margin:auto}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+  .panel{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .preview{align-self:start}
+  @media(max-width:900px){.preview{position:static;order:-1}}
+  .stage{background:repeating-conic-gradient(#e6e9ee 0 25%,#f7f8fa 0 50%) 0 0/20px 20px;border-radius:8px;padding:8px}
+  canvas#main{width:100%;height:auto;display:block;touch-action:none;cursor:grab;background:#fff;box-shadow:0 1px 6px #0003;outline:none}
+  canvas#main:active{cursor:grabbing}
+  canvas#main:focus-visible{box-shadow:0 0 0 3px var(--acc)}
+  .btn,label.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 16px;border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+  .btn:hover{background:var(--acc2)}
+  .btn.sec{background:#fff;color:var(--acc)}
+  .btn.sec:hover{background:#eef4fd}
+  .btn.block{width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .row>*{flex:1}
+  .ctl{margin:10px 0}
+  .ctl label{display:flex;justify-content:space-between;font-size:.9rem;color:var(--mut);margin-bottom:4px}
+  .ctl output{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;height:28px}
+  input[type=number]{width:100%;min-height:42px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .grid3 label{font-size:.8rem;color:var(--mut);display:block}
+  input[type=file]{display:none}
+  input[type=text]{width:100%;min-height:42px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit}
+  .panel .grid3 label{display:block;font-size:.8rem;color:var(--mut)}
+  .radio{display:flex;gap:8px;align-items:center;padding:8px 0;cursor:pointer}
+  .radio input{width:20px;height:20px}
+  .thumbs{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+  .thumb{border:3px solid transparent;border-radius:8px;padding:2px;background:#fff;cursor:pointer;font-size:.8rem;color:var(--mut)}
+  .thumb canvas{width:100%;height:auto;display:block;border:1px solid var(--line)}
+  .thumb.sel{border-color:var(--acc);color:var(--ink);font-weight:600}
+  .warn{background:#fff4d6;border:1px solid #f0c24b;color:#6b4d00;padding:8px 10px;border-radius:8px;margin-top:10px;font-size:.9rem}
+  .help{background:#e8f1fd;border:1px solid #b9d3f6;color:#12417f;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.92rem}
+  .hint{color:var(--mut);font-size:.85rem;margin-top:6px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><a href="decoraciones-toy-story.html" style="color:var(--acc);font-weight:600;text-decoration:none">← Inicio</a><span style="display:flex;gap:8px"><button class="btn" id="bSave" style="min-height:40px">Guardar diseño</button><button class="btn sec" id="bHist" style="min-height:40px">Historial</button></span></div>
+    <h1>Etiquetas de botella de agua</h1>
+
+    <div class="card">
+      <h2>0. Textos de la etiqueta</h2>
+      <label class="radio"><input type="checkbox" id="useDesign" checked> Usar este diseño (sustituye a la plantilla)</label>
+      <div class="grid3" style="grid-template-columns:1fr 1fr">
+        <div><label for="tName">Nombre (letras grandes)</label><input type="text" id="tName" value="Nombre"></div>
+        <div><label for="tSub">Cinta roja</label><input type="text" id="tSub" value="Story"></div>
+        <div style="grid-column:1/-1"><label for="tBig">Texto de la derecha</label><input type="text" id="tBig" value="Cumple"></div>
+      </div>
+      <div class="grid3" style="margin-top:10px">
+        <div><label for="cFill">Letras</label><input type="color" id="cFill" value="#ffd60a" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+        <div><label for="cOut">Contorno</label><input type="color" id="cOut" value="#12318f" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+        <div><label for="cRib">Cinta</label><input type="color" id="cRib" value="#e3202a" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+      </div>
+      <div class="hint">El fondo (cielo con nubes) no cambia.</div>
+    </div>
+
+    <div class="card">
+      <h2>0b. Ficha de curiosidades</h2>
+      <div style="margin-bottom:8px"><label for="cardTitle">Título</label><input type="text" id="cardTitle" value="Composición media"></div>
+      <div style="margin-bottom:8px"><label for="cardSub">Subtítulo</label><input type="text" id="cardSub" value="Nació el 15 de mayo de 2024"></div>
+      <div style="margin-bottom:8px"><label for="cardRows">Filas (una por línea: nombre | valor)</label>
+        <textarea id="cardRows" rows="6" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font:inherit">Ganas de jugar | 100 %
+Sonrisas | 99 %
+Travesuras | 87 %
+Mimos | 100 %
+Siestas voluntarias | 0 %</textarea></div>
+      <div><label for="cardFoot">Pie</label><input type="text" id="cardFoot" value="Sin conservantes · Mejor consumir con mucho amor"></div>
+    </div>
+
+    <div class="card">
+      <h2>0c. Posición y tamaño</h2>
+      <label for="bsel">Elemento</label>
+      <select id="bsel" style="width:100%;min-height:42px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;background:#fff;margin-bottom:6px">
+        <option value="logo">Nombre y cinta (Nombre Story)</option><option value="ano">Texto de la derecha (Cumple)</option><option value="ficha">Ficha de curiosidades</option></select>
+      <label class="radio"><input type="checkbox" id="pon" checked> Mostrar este elemento</label>
+      <div class="ctl"><label for="px">Izquierda ↔ derecha <output id="pxO"></output></label><input type="range" id="px" min="-900" max="900" value="0"></div>
+      <div class="ctl"><label for="py">Arriba ↕ abajo <output id="pyO"></output></label><input type="range" id="py" min="-300" max="300" value="0"></div>
+      <div class="ctl"><label for="ps">Tamaño <output id="psO"></output></label><input type="range" id="ps" min="30" max="170" value="100"></div>
+      <label class="radio"><input type="checkbox" id="flip"> Intercambiar lados (nombre a la derecha)</label>
+      <button class="btn sec block" id="posReset" style="margin-top:6px">Volver a la posición original</button>
+    </div>
+
+    <div class="card">
+      <h2>1. Plantilla (opcional)</h2>
+      <label class="btn block sec" for="tplFile">Subir plantilla PNG (2598 × 591)</label>
+      <input type="file" id="tplFile" accept="image/png,image/*">
+      <label class="radio"><input type="checkbox" id="useFrame" checked> Marco 3D alrededor del círculo</label>
+      <div class="hint" id="tplInfo">Opcional: sube una plantilla PNG propia y se usará en lugar del diseño.</div>
+      <div class="grid3" style="margin-top:10px">
+        <div><label for="cx">Centro X</label><input type="number" id="cx" value="1299"></div>
+        <div><label for="cy">Centro Y</label><input type="number" id="cy" value="296"></div>
+        <div><label for="cr">Radio</label><input type="number" id="cr" value="215" min="1"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>2. Etiquetas</h2>
+      <label class="radio"><input type="radio" name="mode" value="same" checked> Misma imagen en las 4</label>
+      <label class="radio"><input type="radio" name="mode" value="diff"> Imagen distinta en cada una</label>
+      <div class="thumbs" id="thumbs" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Imagen del círculo <span id="curLbl"></span></h2>
+      <label class="btn block" for="imgFile">Subir imagen (JPG, PNG, WebP)</label>
+      <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp">
+      <button class="btn sec block" id="bGal" style="margin-top:8px">Elegir de la galería</button>
+      <div class="warn" id="lowres" hidden></div>
+
+      <div class="ctl"><label for="zoom">Zoom <output id="zoomO"></output></label>
+        <input type="range" id="zoom" min="10" max="500" step="1" value="100"></div>
+      <div class="ctl"><label for="rot">Rotación <output id="rotO"></output></label>
+        <input type="range" id="rot" min="-180" max="180" step="1" value="0"></div>
+      <div class="row">
+        <button class="btn sec" id="bCenter">Centrar</button>
+        <button class="btn sec" id="bFit">Ajustar al círculo</button>
+        <button class="btn sec" id="bReset">Restablecer</button>
+      </div>
+      <div class="hint">Arrastra para mover · rueda o pellizco para zoom · flechas del teclado: 1 px (Shift: 10 px).</div>
+    </div>
+
+    <div class="card">
+      <h2>4. Exportar</h2>
+      <div class="ctl"><label for="sheets">Número de hojas (4 etiquetas cada una)</label>
+        <input type="number" id="sheets" value="1" min="1" max="100"></div>
+      <div class="row">
+        <button class="btn" id="bPdf">Descargar PDF</button>
+        <button class="btn sec" id="bPng">Descargar PNG</button>
+      </div>
+      <div class="help" style="margin-top:10px">Imprime a tamaño real (100 %), sin ajustar a página.</div>
+      <div class="hint" id="status"></div>
+    </div>
+  </div>
+
+  <div class="preview card">
+    <h2>Vista previa <span id="prevLbl"></span></h2>
+    <div class="stage"><canvas id="main" width="2598" height="591" tabindex="0" aria-label="Vista previa de la etiqueta"></canvas></div>
+    <h2 style="margin-top:18px">Hoja A4 (así se imprime)</h2>
+    <div class="stage"><canvas id="sheetPrev" aria-label="Vista previa de la hoja A4"></canvas></div>
+    <div class="hint">4 etiquetas de 22 × 5 cm, apiladas y centradas. Las marcas grises son las líneas de corte.</div>
+  </div>
+</div>
+
+<script src="galeria.js?v=6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(() => {
+  const W = 2598, H = 591;
+  const $ = id => document.getElementById(id);
+  const main = $('main'), mctx = main.getContext('2d');
+  const off = document.createElement('canvas'); off.width = W; off.height = H;
+  const octx = off.getContext('2d');
+
+  let tpl = null, tplBlob = null;
+  const newSlot = () => ({ img: null, blob: null, x: 0, y: 0, z: 1, rot: 0, name: '' });
+  const slots = [newSlot(), newSlot(), newSlot(), newSlot()];
+  let mode = 'same', sel = 0;
+  const cur = () => slots[mode === 'same' ? 0 : sel];
+  const circ = () => ({ x: +$('cx').value || 0, y: +$('cy').value || 0, r: Math.max(1, +$('cr').value || 1) });
+
+  function coverScale(img, r) { return (2 * r) / Math.min(img.naturalWidth || img.width, img.naturalHeight || img.height) * 1; }
+  // cover: la imagen debe cubrir el círculo (diámetro 2r) en ambas dimensiones
+  function cover(img, r) {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    return Math.max(2 * r / w, 2 * r / h);
+  }
+
+  // ---------- Diseño estilo Toy Story ----------
+  const FONT = '"Arial Rounded MT Bold","Baloo 2","Nunito","Trebuchet MS",Arial,sans-serif';
+  const NAVY = '#12318f', YEL = '#ffd60a';
+
+  function ring(ctx, cx, cy, r1, r2, fill) {
+    ctx.beginPath(); ctx.arc(cx, cy, r1, 0, Math.PI * 2); ctx.arc(cx, cy, r2, 0, Math.PI * 2, true);
+    ctx.fillStyle = fill; ctx.fill('evenodd');
+  }
+  // ---- Diseño editable: se genera en HTML/SVG con las fuentes incrustadas y se pasa al canvas ----
+  const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const shadeHex = (hex, f) => { const n = parseInt(hex.slice(1), 16), c = k => Math.max(0, Math.min(255, Math.round(((n >> k) & 255) * f))); return '#' + [16, 8, 0].map(k => c(k).toString(16).padStart(2, '0')).join(''); };
+  const mixHex = (hex, to, t) => { const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16), f = k => Math.round(((a >> k) & 255) * (1 - t) + ((b >> k) & 255) * t); return '#' + [16, 8, 0].map(k => f(k).toString(16).padStart(2, '0')).join(''); };
+  const POS_DEF = { logo: { x: 0, y: 0, s: 100, on: true }, ano: { x: 0, y: 0, s: 100, on: true }, ficha: { x: 0, y: 0, s: 100, on: true } };
+  const POS = JSON.parse(JSON.stringify(POS_DEF));
+  const BB = { logo: [[8, -5], [-6, 3], [10, -3], [-2, 5]], story: [[4, -3], [-4, 3], [5, -2], [-3, 4], [4, -3]], ano: [[6, -4], [-6, 3], [8, -3], [-2, 4]] };
+  const spans = (text, pat) => { let i = 0; return [...text.toUpperCase()].map(c => { if (c === ' ') return ' '; const [ty, r] = pat[i++ % pat.length]; return `<span style="transform:translateY(${ty}px) rotate(${r}deg)">${esc(c)}</span>`; }).join(''); };
+  const lgBlock = (text, pat, left, top, width, fs, rot) => { const sp = spans(text, pat); return `<div class="lg" style="left:${left}px;top:${top}px;width:${width}px;font-size:${fs}px;transform:rotate(${rot}deg)"><div class="o">${sp}</div><div class="m">${sp}</div><div class="f">${sp}</div></div>`; };
+  const wrapBlock = (key, cx0, cy0, home, inner) => {
+    const p = POS[key]; if (!p.on) return '';
+    const dx = p.x + ($('flip').checked ? (home === 'L' ? 2598 - 2 * cx0 : 2598 - 2 * cx0) : 0);
+    return `<div style="position:absolute;left:0;top:0;width:2598px;height:591px;transform-origin:${cx0}px ${cy0}px;transform:translate(${dx}px,${p.y}px) scale(${p.s / 100})">${inner}</div>`;
+  };
+  function designMarkup() {
+    const v = id => $(id).value, fill = v('cFill'), out = v('cOut'), rib = v('cRib');
+    const outDark = out.toLowerCase() === '#12318f' ? '#0a1f66' : shadeHex(out, .55), amber = fill.toLowerCase() === '#ffd60a' ? '#d98a00' : shadeHex(fill, .78);
+    const ribBack = rib.toLowerCase() === '#e3202a' ? '#9e0f19' : shadeHex(rib, .6), ribHi = rib.toLowerCase() === '#e3202a' ? '#ff7a7a' : mixHex(rib, '#ffffff', .5);
+    const css = `.lg{position:absolute;display:grid;font-family:'Titan One',system-ui,sans-serif;line-height:1;white-space:nowrap;text-align:center}.lg>div{grid-area:1/1}
+.lg .o{color:${out};-webkit-text-stroke:20px ${out};paint-order:stroke fill;text-shadow:0 8px 0 ${outDark},0 14px 18px rgba(0,10,60,.35)}.lg .m{color:${amber};transform:translateY(5px)}.lg .f{color:${fill}}.lg span{display:inline-block}`;
+    const logo = lgBlock(v('tName'), BB.logo, 100, 62, 800, 158, -4) +
+      `<svg xmlns="http://www.w3.org/2000/svg" width="820" height="170" viewBox="0 0 820 230" preserveAspectRatio="none" style="position:absolute;left:90px;top:285px;filter:drop-shadow(0 14px 14px rgba(0,0,60,.3))"><polygon points="6,52 790,26 820,214 0,236" fill="${ribBack}"/><polygon points="6,40 790,14 818,198 0,222" fill="${rib}"/><polygon points="20,52 776,28 800,184 14,206" fill="none" stroke="${ribHi}" stroke-width="3" opacity=".55"/></svg>` +
+      lgBlock(v('tSub'), BB.story, 100, 332, 800, 104, -2);
+    const ano = lgBlock(v('tBig'), BB.ano, 1698, 44, 800, 125, 3);
+    const rows = v('cardRows').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const i = l.lastIndexOf('|'); return i < 0 ? [l, ''] : [l.slice(0, i).trim(), l.slice(i + 1).trim()]; });
+    const rfs = Math.max(16, Math.min(27, Math.floor(135 / Math.max(1, rows.length))));
+    const rowHtml = rows.map(([a, b]) => `<div style="display:flex;align-items:baseline;gap:10px"><span>${esc(a)}</span><span style="flex-grow:1;border-bottom:3px dotted ${out}"></span><span>${esc(b)}</span></div>`).join('');
+    const ficha = `<div style="position:absolute;left:1678px;top:196px;width:840px;height:364px;box-sizing:border-box;padding:18px 34px 16px;background:#fffdf4;border:8px solid ${out};border-radius:30px;box-shadow:0 12px 0 ${outDark},0 20px 26px rgba(0,10,60,.3);display:flex;flex-direction:column;font-family:'Nunito',system-ui,sans-serif;color:${out}">
+<div style="font-family:'Titan One',system-ui,sans-serif;font-size:36px;line-height:1.1;text-align:center;color:${rib}">${esc(v('cardTitle').toUpperCase())}</div>
+<div style="font-size:22px;font-weight:800;text-align:center;margin-top:2px;padding-bottom:8px;border-bottom:4px solid ${out}">${esc(v('cardSub'))}</div>
+<div style="display:flex;flex-direction:column;justify-content:space-between;flex-grow:1;padding-top:8px;font-size:${rfs}px;font-weight:800">${rowHtml}</div>
+<div style="font-size:20px;font-weight:800;text-align:center;padding-top:8px;border-top:4px solid ${out};margin-top:6px">${esc(v('cardFoot'))}</div></div>`;
+    const clouds = [[20, 40, 1.3], [790, 20, .9], [40, 470, .8], [860, 470, 1.1], [1620, 430, 1], [1660, 20, .8], [2330, 30, 1.2], [2400, 430, 1.1]].map(c => `<use href="#cl" transform="translate(${c[0]},${c[1]}) scale(${c[2]})"/>`).join('');
+    return { css, html: `<div style="position:relative;width:2598px;height:591px;overflow:hidden;background:linear-gradient(180deg,#5b9be0 0%,#86b8ee 100%)">
+<svg xmlns="http://www.w3.org/2000/svg" width="2598" height="591" viewBox="0 0 2598 591" style="position:absolute;left:0;top:0"><defs><g id="cl"><rect x="10" y="70" width="180" height="22" rx="11"/><circle cx="68" cy="62" r="30"/><circle cx="114" cy="44" r="40"/><circle cx="158" cy="66" r="24"/></g></defs><g fill="#fff">${clouds}</g></svg>
+${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)}${wrapBlock('ficha', 2098, 378, 'R', ficha)}</div>` };
+  }
+  let fontCssP = null;
+  function fontCss() { // fuentes incrustadas (el SVG-imagen no puede cargarlas de internet)
+    return fontCssP || (fontCssP = (async () => {
+      const get = async (slug, w) => { const r = await fetch(`https://cdn.jsdelivr.net/fontsource/fonts/${slug}@latest/latin-${w}-normal.woff`); if (!r.ok) throw new Error('fuente'); const u = new Uint8Array(await r.arrayBuffer()); let b = ''; for (let i = 0; i < u.length; i += 8192) b += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(b); };
+      const [t, n] = await Promise.all([get('titan-one', 400), get('nunito', 800)]);
+      return `@font-face{font-family:'Titan One';src:url(data:font/woff;base64,${t}) format('woff')}@font-face{font-family:'Nunito';font-weight:800;src:url(data:font/woff;base64,${n}) format('woff')}`;
+    })().catch(e => { fontCssP = null; throw e; }));
+  }
+  let designCanvas = null, designTok = 0, designPromise = Promise.resolve();
+  async function rebuildDesign() {
+    const my = ++designTok; let fc = ''; try { fc = await fontCss(); } catch (e) { /* sin conexión: se usa la fuente del sistema */ }
+    const d = designMarkup(), svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject x="0" y="0" width="${W}" height="${H}"><div xmlns="http://www.w3.org/1999/xhtml"><style>${fc}${d.css}</style>${d.html}</div></foreignObject></svg>`;
+    const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error('No se pudo dibujar el diseño')); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); });
+    if (my !== designTok) return; const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(img, 0, 0, W, H); designCanvas = c; redraw();
+  }
+  let dTimer = 0; const scheduleDesign = () => { clearTimeout(dTimer); dTimer = setTimeout(() => { designPromise = rebuildDesign().catch(e => console.warn(e)); }, 180); };
+  function drawDesign(ctx) {
+    if (designCanvas) { ctx.drawImage(designCanvas, 0, 0, W, H); return; }
+    const sky = ctx.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#5b9be0'); sky.addColorStop(1, '#86b8ee'); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+  }
+  // posición y tamaño de cada elemento
+  const syncPos = () => { const p = POS[$('bsel').value]; $('px').value = p.x; $('py').value = p.y; $('ps').value = p.s; $('pon').checked = p.on; $('pxO').textContent = p.x; $('pyO').textContent = p.y; $('psO').textContent = p.s + ' %'; };
+  function drawFrame(ctx, cx, cy, r) { // marco 3D alrededor de la foto
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
+    ring(ctx, cx, cy, r + 46, r - 1, NAVY); ctx.restore();
+    ring(ctx, cx, cy, r + 46, r + 34, NAVY);
+    const gy = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    gy.addColorStop(0, '#fff59a'); gy.addColorStop(.5, YEL); gy.addColorStop(1, '#e09b00');
+    ring(ctx, cx, cy, r + 34, r + 20, gy);
+    const gb = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+    gb.addColorStop(0, '#3f72e8'); gb.addColorStop(.5, '#1d46b8'); gb.addColorStop(1, '#0c2270');
+    ring(ctx, cx, cy, r + 20, r - 1, gb);
+    ctx.lineCap = 'round'; // brillos
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(cx, cy, r + 40, Math.PI * 1.05, Math.PI * 1.4); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(cx, cy, r + 10, Math.PI * 1.08, Math.PI * 1.38); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 6; // sombra interior
+    ctx.beginPath(); ctx.arc(cx, cy, r + 3, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  function render(ctx, s) {
+    const { x: cx, y: cy, r } = circ();
+    const design = $('useDesign').checked;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    if (design) drawDesign(ctx);
+    else if (tpl) ctx.drawImage(tpl, 0, 0, W, H);
+    if (!tpl || design) { ctx.fillStyle = '#eceff3'; ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.fill(); }
+    if (s.img) {
+      const w = s.img.naturalWidth, h = s.img.naturalHeight;
+      const sc = cover(s.img, r) * s.z;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, cy, r + 2, 0, Math.PI * 2); ctx.clip();
+      ctx.translate(cx + s.x, cy + s.y);
+      ctx.rotate(s.rot * Math.PI / 180);
+      ctx.scale(sc, sc);
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(s.img, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }
+    if ($('useFrame').checked) drawFrame(ctx, cx, cy, r);
+  }
+
+  let raf = 0;
+  function redraw() { tr.touch(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+  function draw() {
+    render(mctx, cur());
+    // hoja A4 como en el PDF: 4 etiquetas de 220 × 50 mm apiladas y centradas, con marcas de corte
+    const sp = $('sheetPrev'), k = 3, X0 = 38.5, Y0 = 5, LW = 220, LH = 50;
+    if (sp.width !== 297 * k) { sp.width = 297 * k; sp.height = 210 * k; }
+    const sc = sp.getContext('2d'); sc.fillStyle = '#fff'; sc.fillRect(0, 0, sp.width, sp.height);
+    const place = i => sc.drawImage(off, X0 * k, (Y0 + i * LH) * k, LW * k, LH * k);
+    if (mode === 'diff') {
+      document.querySelectorAll('.thumb canvas').forEach((c, i) => {
+        render(octx, slots[i]);
+        const t = c.getContext('2d'); t.drawImage(off, 0, 0, c.width, c.height); place(i);
+      });
+    } else { render(octx, slots[0]); for (let i = 0; i < 4; i++) place(i); }
+    sc.strokeStyle = '#999'; sc.lineWidth = 1; sc.beginPath();
+    for (let i = 0; i <= 4; i++) { const y = (Y0 + i * LH) * k; sc.moveTo((X0 - 6.5) * k, y); sc.lineTo((X0 - 1.5) * k, y); sc.moveTo((X0 + LW + 1.5) * k, y); sc.lineTo((X0 + LW + 6.5) * k, y); }
+    [X0, X0 + LW].forEach(x => { sc.moveTo(x * k, (Y0 - 4.5) * k); sc.lineTo(x * k, (Y0 - 1.5) * k); sc.moveTo(x * k, (Y0 + 4 * LH + 1.5) * k); sc.lineTo(x * k, (Y0 + 4 * LH + 4.5) * k); });
+    sc.stroke();
+  }
+
+  function syncUI() {
+    const s = cur();
+    $('zoom').value = Math.round(s.z * 100); $('zoomO').textContent = Math.round(s.z * 100) + ' %';
+    $('rot').value = Math.round(s.rot); $('rotO').textContent = Math.round(s.rot) + '°';
+    const lbl = mode === 'diff' ? '(etiqueta ' + (sel + 1) + ')' : '';
+    $('curLbl').textContent = lbl; $('prevLbl').textContent = lbl;
+    document.querySelectorAll('.thumb').forEach((t, i) => t.classList.toggle('sel', i === sel));
+    checkRes(s);
+  }
+  function checkRes(s) {
+    const w = $('lowres');
+    if (s.img && Math.min(s.img.naturalWidth, s.img.naturalHeight) < 430) {
+      w.hidden = false;
+      w.textContent = `⚠ La imagen es pequeña (${s.img.naturalWidth} × ${s.img.naturalHeight} px; el lado corto tiene menos de 430 px). Se verá pixelada al imprimir.`;
+    } else w.hidden = true;
+  }
+  function update() { syncUI(); redraw(); }
+
+  // Miniaturas
+  function buildThumbs() {
+    const box = $('thumbs'); box.innerHTML = '';
+    for (let i = 0; i < 4; i++) {
+      const d = document.createElement('div'); d.className = 'thumb';
+      const c = document.createElement('canvas'); c.width = 520; c.height = 118;
+      d.appendChild(c); d.appendChild(document.createTextNode('Etiqueta ' + (i + 1)));
+      d.onclick = () => { sel = i; update(); };
+      box.appendChild(d);
+    }
+  }
+  buildThumbs();
+
+  document.querySelectorAll('input[name=mode]').forEach(r => r.onchange = () => {
+    mode = r.value; if (!r.checked) return;
+    $('thumbs').hidden = mode !== 'diff'; update();
+  });
+
+  // Carga de archivos
+  function loadImg(file) {
+    return new Promise((res, rej) => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => res(im); im.onerror = () => rej(new Error('No se pudo leer la imagen'));
+      im.src = u;
+    });
+  }
+  $('tplFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      tpl = await loadImg(f); tplBlob = f; $('useDesign').checked = false;
+      $('tplInfo').textContent = `${f.name} — ${tpl.naturalWidth} × ${tpl.naturalHeight} px` +
+        ((tpl.naturalWidth !== W || tpl.naturalHeight !== H) ? ' (se escala a 2598 × 591)' : '');
+      redraw();
+    } catch (err) { alert(err.message); }
+    e.target.value = '';
+  };
+  $('imgFile').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const im = await loadImg(f), s = cur();
+      Object.assign(s, { img: im, blob: f, x: 0, y: 0, z: 1, rot: 0, name: f.name });
+      Galeria.add({ blob: f, name: f.name, tag: 'original', sig: 'f:' + f.name + ':' + f.size + ':' + f.lastModified });
+      update();
+    } catch (err) { alert(err.message); }
+    e.target.value = '';
+  };
+  $('bGal').onclick = async () => {
+    const r = await Galeria.pick(); if (!r) return;
+    try { const im = await loadImg(r.blob), s = cur(); Object.assign(s, { img: im, blob: r.blob, x: 0, y: 0, z: 1, rot: 0, name: r.name }); update(); } catch (err) { alert(err.message); }
+  };
+  ['cx', 'cy', 'cr'].forEach(id => $(id).oninput = redraw);
+  ['tName', 'tSub', 'tBig', 'cFill', 'cOut', 'cRib', 'cardTitle', 'cardSub', 'cardRows', 'cardFoot', 'flip'].forEach(id => { $(id).oninput = scheduleDesign; $(id).onchange = scheduleDesign; });
+  $('bsel').onchange = syncPos;
+  ['px', 'py', 'ps'].forEach(id => $(id).oninput = () => { const p = POS[$('bsel').value]; p.x = +$('px').value; p.y = +$('py').value; p.s = +$('ps').value; syncPos(); scheduleDesign(); });
+  $('pon').onchange = () => { POS[$('bsel').value].on = $('pon').checked; scheduleDesign(); };
+  $('posReset').onclick = () => { Object.assign(POS[$('bsel').value], POS_DEF[$('bsel').value]); syncPos(); scheduleDesign(); };
+  $('useDesign').onchange = redraw; $('useFrame').onchange = redraw;
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(redraw);
+
+  // Controles
+  $('zoom').oninput = e => { cur().z = e.target.value / 100; update(); };
+  $('rot').oninput = e => { cur().rot = +e.target.value; update(); };
+  $('bCenter').onclick = () => { const s = cur(); s.x = 0; s.y = 0; update(); };
+  $('bFit').onclick = () => { const s = cur(); s.x = 0; s.y = 0; s.z = 1; update(); };
+  $('bReset').onclick = () => { Object.assign(cur(), { x: 0, y: 0, z: 1, rot: 0 }); update(); };
+
+  const clampZ = z => Math.min(5, Math.max(0.1, z));
+
+  // Arrastrar / pellizcar (Pointer Events)
+  const ptrs = new Map(); let pinch0 = null;
+  const scaleF = () => W / main.getBoundingClientRect().width;
+  main.addEventListener('pointerdown', e => {
+    main.focus({ preventScroll: true });
+    main.setPointerCapture(e.pointerId);
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cur().z };
+    }
+  });
+  main.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    const s = cur(), k = scaleF();
+    if (ptrs.size === 1) {
+      s.x += (e.clientX - p.x) * k; s.y += (e.clientY - p.y) * k;
+    }
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 2 && pinch0) {
+      const [a, b] = [...ptrs.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch0.d > 0) s.z = clampZ(pinch0.z * d / pinch0.d);
+    }
+    update();
+  });
+  const endPtr = e => {
+    ptrs.delete(e.pointerId); pinch0 = null;
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), z: cur().z }; }
+  };
+  main.addEventListener('pointerup', endPtr);
+  main.addEventListener('pointercancel', endPtr);
+  main.addEventListener('wheel', e => {
+    e.preventDefault();
+    const s = cur(); s.z = clampZ(s.z * Math.exp(-e.deltaY * 0.0015)); update();
+  }, { passive: false });
+
+  // Teclado
+  document.addEventListener('keydown', e => {
+    const t = document.activeElement;
+    if (t && t !== main && t !== document.body) return;
+    const step = e.shiftKey ? 10 : 1, s = cur();
+    const m = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+    if (!m) return;
+    e.preventDefault(); s.x += m[0]; s.y += m[1]; update();
+  });
+
+  // Exportar
+  const status = m => $('status').textContent = m;
+  const download = (blob, name) => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  $('bPng').onclick = async () => {
+    await designPromise; render(octx, cur());
+    off.toBlob(b => download(b, `etiqueta-${mode === 'diff' ? sel + 1 : 1}.png`), 'image/png');
+  };
+  $('bPdf').onclick = async () => {
+    if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
+    await designPromise; const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1));
+    status('Generando PDF…'); await new Promise(r => setTimeout(r, 30));
+    const urls = [];
+    for (let i = 0; i < 4; i++) {
+      render(octx, slots[mode === 'same' ? 0 : i]);
+      urls.push(off.toDataURL('image/png'));
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const LW = 220, LH = 50, x0 = (297 - LW) / 2, y0 = (210 - 4 * LH) / 2; // 38,5 · 5
+    for (let p = 0; p < sheets; p++) {
+      if (p > 0) doc.addPage('a4', 'landscape');
+      for (let i = 0; i < 4; i++) doc.addImage(urls[i], 'PNG', x0, y0 + i * LH, LW, LH, 'lab' + i, 'FAST');
+      doc.setDrawColor(150); doc.setLineWidth(0.15);
+      const mk = 5, gap = 1.5;
+      for (let i = 0; i <= 4; i++) {
+        const y = y0 + i * LH;
+        doc.line(x0 - gap - mk, y, x0 - gap, y);
+        doc.line(x0 + LW + gap, y, x0 + LW + gap + mk, y);
+      }
+      // marcas verticales en los márgenes superior e inferior
+      [x0, x0 + LW].forEach(x => {
+        doc.line(x, y0 - gap - 3, x, y0 - gap);
+        doc.line(x, y0 + 4 * LH + gap, x, y0 + 4 * LH + gap + 3);
+      });
+    }
+    doc.save('etiquetas.pdf');
+    status(`PDF generado: ${sheets} hoja(s), ${sheets * 4} etiquetas.`);
+  };
+
+  // Historial
+  const TX = ['tName', 'tSub', 'tBig', 'cFill', 'cOut', 'cRib', 'cardTitle', 'cardSub', 'cardRows', 'cardFoot', 'cx', 'cy', 'cr', 'sheets'];
+  const tr = Galeria.tracker('botella', async () => {
+    if (!slots.some(s => s.blob)) return null;
+    const blobs = {}; slots.forEach((s, i) => { if (s.blob) blobs['s' + i] = s.blob; }); if (tplBlob) blobs.tpl = tplBlob;
+    const th = document.createElement('canvas'); th.width = 400; th.height = 91; th.getContext('2d').drawImage(main, 0, 0, 400, 91);
+    const data = { mode, sel, useDesign: $('useDesign').checked, useFrame: $('useFrame').checked, slots: slots.map(s => ({ x: s.x, y: s.y, z: s.z, rot: s.rot, name: s.name })) };
+    TX.forEach(k => data[k] = $(k).value); data.pos = JSON.parse(JSON.stringify(POS)); data.flip = $('flip').checked;
+    return { name: (slots.find(s => s.blob) || {}).name || 'Etiqueta', summary: mode === 'same' ? 'Misma imagen en las 4' : 'Imágenes distintas', data, blobs, thumb: th.toDataURL('image/jpeg', .75) };
+  });
+  $('bSave').onclick = async () => {
+    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', $('tName').value + ' ' + $('tBig').value); if (!nm) return;
+    const id = await tr.saveAs(nm.trim()); const b = $('bSave');
+    if (!id) { alert('Primero sube una imagen.'); return; }
+    b.textContent = '¡Guardado!'; setTimeout(() => b.textContent = 'Guardar diseño', 1800);
+  };
+  async function openProject(p) {
+    const d = p.data;
+    try {
+      for (let i = 0; i < 4; i++) {
+        const b = p.blobs['s' + i], sd = (d.slots || [])[i] || {};
+        if (b) Object.assign(slots[i], { img: await loadImg(b), blob: b, x: sd.x, y: sd.y, z: sd.z, rot: sd.rot, name: sd.name }); else Object.assign(slots[i], newSlot());
+      }
+      mode = d.mode || 'same'; sel = d.sel || 0; document.querySelector('input[name=mode][value=' + mode + ']').checked = true; $('thumbs').hidden = mode !== 'diff';
+      $('useDesign').checked = !!d.useDesign; $('useFrame').checked = d.useFrame !== false; TX.forEach(k => { if (d[k] !== undefined) $(k).value = d[k]; });
+      if (d.pos) for (const k in POS) if (d.pos[k]) Object.assign(POS[k], d.pos[k]); $('flip').checked = !!d.flip; syncPos(); await rebuildDesign();
+      if (p.blobs.tpl) { tpl = await loadImg(p.blobs.tpl); tplBlob = p.blobs.tpl; }
+      update(); tr.rebase();
+    } catch (err) { alert(err.message); }
+  }
+  $('bHist').onclick = async () => { const p = await Galeria.history('botella'); if (p) openProject(p); };
+  syncPos(); scheduleDesign();
+  update();
+  const abrir = new URLSearchParams(location.search).get('abrir'); if (abrir) Galeria.getProject(abrir).then(p => p && openProject(p));
+})();
+</script>
+</body>
+</html>

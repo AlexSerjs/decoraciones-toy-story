@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Círculos de decoración</title>
+<style>
+  :root{--bg:#f3f5f8;--card:#fff;--ink:#1d2733;--mut:#667385;--acc:#1b6fe0;--acc2:#0f4fa8;--line:#d9dfe7}
+  *{box-sizing:border-box}
+  body{margin:0;font:16px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  h1{font-size:1.25rem;margin:0 0 12px}
+  h2{font-size:.95rem;margin:0 0 10px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut)}
+  a.back{color:var(--acc);font-weight:600;text-decoration:none}
+  .app{display:grid;grid-template-columns:380px 1fr;gap:16px;padding:16px;max-width:1500px;margin:auto}
+  @media(max-width:900px){.app{grid-template-columns:1fr}}
+  .panel{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .btn,label.btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:10px 16px;border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;text-align:center}
+  .btn:hover{background:var(--acc2)}
+  .btn.sec{background:#fff;color:var(--acc)}
+  .btn.sec:hover{background:#eef4fd}
+  .btn.block{width:100%}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .row>*{flex:1}
+  .ctl{margin:10px 0}
+  .ctl label,.f label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut);margin-bottom:4px}
+  .ctl output{color:var(--ink);font-weight:600}
+  input[type=range]{width:100%;height:28px}
+  input[type=number],select{width:100%;min-height:42px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff}
+  input[type=file]{display:none}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .chk{display:flex;gap:8px;align-items:center;padding:6px 0;cursor:pointer}
+  .chk input{width:20px;height:20px}
+  .help{background:#e8f1fd;border:1px solid #b9d3f6;color:#12417f;padding:10px 12px;border-radius:8px;font-weight:600;font-size:.92rem}
+  .info{margin-top:8px;font-weight:600}
+  .warn{background:#fff4d6;border:1px solid #f0c24b;color:#6b4d00;padding:8px 10px;border-radius:8px;margin-top:8px;font-size:.9rem}
+  .hint{color:var(--mut);font-size:.85rem;margin-top:6px}
+  .stage{background:repeating-conic-gradient(#e6e9ee 0 25%,#f7f8fa 0 50%) 0 0/20px 20px;border-radius:8px;padding:10px;display:flex;justify-content:center}
+  canvas{max-width:100%;height:auto;display:block}
+  #edit{width:min(100%,420px);touch-action:none;cursor:grab;box-shadow:0 1px 6px #0003;border-radius:50%;background:#fff}
+  #page{box-shadow:0 1px 8px #0004;background:#fff}
+  .preview{display:flex;flex-direction:column;gap:14px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><a class="back" href="decoraciones-toy-story.html">← Inicio</a><span style="display:flex;gap:8px"><button class="btn" id="bSave" style="min-height:40px">Guardar diseño</button><button class="btn sec" id="bHist" style="min-height:40px">Historial</button></span></div>
+    <h1>Círculos de decoración</h1>
+
+    <div class="card">
+      <h2>1. Imagen (PNG sin fondo)</h2>
+      <label class="btn block" for="imgFile">Subir imagen PNG</label>
+      <input type="file" id="imgFile" accept="image/png,image/webp,image/jpeg">
+      <button class="btn sec block" id="bGal" style="margin-top:8px">Elegir de la galería</button>
+      <div class="hint" id="galInfo">Las imágenes se guardan solas en la galería.</div>
+      <div class="ctl"><label for="zoom">Tamaño <output id="zoomO">100 %</output></label>
+        <input type="range" id="zoom" min="20" max="300" value="100"></div>
+      <div class="row">
+        <button class="btn sec" id="bCenter">Centrar</button>
+        <button class="btn sec" id="bReset">Restablecer</button>
+      </div>
+      <div class="hint">Arrastra la imagen en el círculo para moverla; rueda del ratón o pellizco para el tamaño.</div>
+    </div>
+
+    <div class="card">
+      <h2>2. Círculo y hoja</h2>
+      <div class="g2 f">
+        <div><label for="diam">Diámetro (cm)</label><input type="number" id="diam" value="8" min="1" max="20" step="0.5"></div>
+        <div><label for="orient">Orientación hoja</label>
+          <select id="orient"><option value="auto">Automática (más círculos)</option><option value="v">Vertical</option><option value="h">Horizontal</option></select></div>
+        <div><label for="margin">Margen hoja (mm)</label><input type="number" id="margin" value="5" min="0" max="30"></div>
+        <div><label for="gap">Separación (mm)</label><input type="number" id="gap" value="3" min="0" max="30"></div>
+      </div>
+      <label class="chk"><input type="checkbox" id="sky" checked> Fondo de cielo con nubes</label>
+      <label class="chk"><input type="checkbox" id="frame" checked> Borde 3D</label>
+      <div id="frameOpts">
+        <div class="g3 f" style="margin-top:4px">
+          <div><label for="fc1">Exterior</label><input type="color" id="fc1" value="#12318f" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+          <div><label for="fc2">Medio</label><input type="color" id="fc2" value="#ffd60a" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+          <div><label for="fc3">Interior</label><input type="color" id="fc3" value="#1d46b8" style="width:100%;height:46px;border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff"></div>
+        </div>
+        <button class="btn sec block" id="fcReset" style="margin-top:8px;min-height:40px">Colores originales (azul y amarillo)</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="cut" checked> Línea de corte gris fina</label>
+      <div class="info" id="count"></div>
+      <div class="warn" id="warn" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Exportar</h2>
+      <div class="ctl"><label for="sheets">Número de hojas</label><input type="number" id="sheets" value="1" min="1" max="100"></div>
+      <button class="btn block" id="bPdf">Descargar PDF (A4)</button>
+      <div class="help" style="margin-top:10px">Imprime a tamaño real (100 %), sin ajustar a página.</div>
+      <div class="hint" id="status"></div>
+    </div>
+  </div>
+
+  <div class="preview">
+    <div class="card">
+      <h2>Un círculo</h2>
+      <div class="stage"><canvas id="edit" width="840" height="840" aria-label="Círculo editable"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Hoja A4 (vista previa)</h2>
+      <div class="stage"><canvas id="page"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="galeria.js?v=6"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const st = { img: null, z: 1, x: 0, y: 0 }; // x,y: fracción del diámetro interior
+  const NAVY = '#12318f', YEL = '#ffd60a';
+
+  function cloud(ctx, x, y, s) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = '#fff';
+    const c = (cx, cy, r) => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill(); };
+    ctx.beginPath(); ctx.roundRect(10, 70, 180, 22, 11); ctx.fill();
+    c(68, 62, 30); c(114, 44, 40); c(158, 66, 24);
+    ctx.restore();
+  }
+  const CLOUDS = [[20, 40, .85], [330, 20, .7], [380, 250, .8], [-10, 330, .8], [190, 470, 1], [400, 430, .7], [150, 190, .45]];
+  const mixHex = (hex, to, t) => { const a = parseInt(hex.slice(1), 16), b = parseInt(to.slice(1), 16), f = k => Math.round(((a >> k) & 255) * (1 - t) + ((b >> k) & 255) * t); return '#' + [16, 8, 0].map(k => f(k).toString(16).padStart(2, '0')).join(''); };
+  // degradado de 3 tonos para dar relieve; con los colores originales se usan los tonos exactos de siempre
+  const stops = (color, orig) => color.toLowerCase() === orig[1].toLowerCase() ? orig : [mixHex(color, '#ffffff', .5), color, mixHex(color, '#000000', .3)];
+  function ring(ctx, c, r1, r2, fill) {
+    ctx.beginPath(); ctx.moveTo(c + r1, c); ctx.arc(c, c, r1, 0, Math.PI * 2); ctx.closePath(); ctx.moveTo(c + r2, c); ctx.arc(c, c, r2, 0, Math.PI * 2, true); ctx.closePath(); ctx.fillStyle = fill; ctx.fill('evenodd');
+  }
+  function drawCircle(ctx, S) {
+    const R = S / 2, frame = $('frame').checked, ri = frame ? R / 1.214 : R;
+    ctx.clearRect(0, 0, S, S);
+    ctx.save(); ctx.beginPath(); ctx.arc(R, R, R, 0, 7); ctx.clip();
+    if ($('sky').checked) {
+      const g = ctx.createLinearGradient(0, 0, 0, S); g.addColorStop(0, '#5b9be0'); g.addColorStop(1, '#9cc6f3');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, S, S);
+      ctx.save(); ctx.scale(S / 600, S / 600); CLOUDS.forEach(c => cloud(ctx, c[0], c[1], c[2] * 1.3)); ctx.restore();
+    } else { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, S, S); }
+    if (st.img) {
+      const w = st.img.naturalWidth, h = st.img.naturalHeight;
+      const sc = Math.min(2 * ri / w, 2 * ri / h) * st.z;
+      ctx.save(); ctx.beginPath(); ctx.arc(R, R, ri, 0, 7); ctx.clip();
+      ctx.translate(R + st.x * 2 * ri, R + st.y * 2 * ri); ctx.scale(sc, sc);
+      ctx.imageSmoothingQuality = 'high'; ctx.drawImage(st.img, -w / 2, -h / 2); ctx.restore();
+    }
+    if (frame) {
+      const k = ri / 215;
+      ring(ctx, R, ri + 46 * k, ri + 34 * k, $('fc1').value);
+      const gy = ctx.createLinearGradient(0, 0, S, S), sy = stops($('fc2').value, ['#fff59a', YEL, '#e09b00']); sy.forEach((c, i) => gy.addColorStop(i / 2, c));
+      ring(ctx, R, ri + 34 * k, ri + 20 * k, gy);
+      const gb = ctx.createLinearGradient(0, 0, S, S), sb = stops($('fc3').value, ['#3f72e8', '#1d46b8', '#0c2270']); sb.forEach((c, i) => gb.addColorStop(i / 2, c));
+      ring(ctx, R, ri + 20 * k, ri - 1, gb);
+      ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5 * k;
+      ctx.beginPath(); ctx.arc(R, R, ri + 40 * k, Math.PI * 1.05, Math.PI * 1.4); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6 * k;
+      ctx.beginPath(); ctx.arc(R, R, ri + 10 * k, Math.PI * 1.08, Math.PI * 1.38); ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 6 * k;
+      ctx.beginPath(); ctx.arc(R, R, ri + 3 * k, 0, 7); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Maquetación en A4
+  function layout() {
+    const D = (+$('diam').value || 1) * 10, m = +$('margin').value || 0, g = +$('gap').value || 0, o = $('orient').value;
+    const calc = (W, H) => {
+      const cols = Math.max(0, Math.floor((W - 2 * m + g) / (D + g))), rows = Math.max(0, Math.floor((H - 2 * m + g) / (D + g)));
+      return { W, H, cols, rows, n: cols * rows };
+    };
+    const v = calc(210, 297), h = calc(297, 210);
+    const L = o === 'v' ? v : o === 'h' ? h : (h.n > v.n ? h : v);
+    L.D = D; L.g = g;
+    L.x0 = (L.W - (L.cols * D + (L.cols - 1) * g)) / 2; L.y0 = (L.H - (L.rows * D + (L.rows - 1) * g)) / 2;
+    return L;
+  }
+
+  const ed = $('edit'), ectx = ed.getContext('2d'), pg = $('page'), pctx = pg.getContext('2d');
+  let raf = 0;
+  const redraw = () => { tr.touch(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); };
+  function draw() {
+    drawCircle(ectx, ed.width);
+    const L = layout();
+    const k = 3; // px por mm en la vista previa
+    pg.width = L.W * k; pg.height = L.H * k;
+    pctx.fillStyle = '#fff'; pctx.fillRect(0, 0, pg.width, pg.height);
+    $('count').textContent = L.n ? `Caben ${L.n} círculos por hoja (${L.cols} × ${L.rows}), hoja ${L.W > L.H ? 'horizontal' : 'vertical'}.` : '';
+    const w = $('warn'); w.hidden = L.n > 0;
+    if (!L.n) { w.textContent = 'El círculo no cabe en la hoja con ese margen. Reduce el diámetro.'; return; }
+    const sp = document.createElement('canvas'), S = Math.round(L.D * k * 2); sp.width = sp.height = S;
+    drawCircle(sp.getContext('2d'), S);
+    for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+      const x = L.x0 + c * (L.D + L.g), y = L.y0 + r * (L.D + L.g);
+      pctx.drawImage(sp, x * k, y * k, L.D * k, L.D * k);
+      if ($('cut').checked) { pctx.strokeStyle = '#999'; pctx.lineWidth = 1; pctx.beginPath(); pctx.arc((x + L.D / 2) * k, (y + L.D / 2) * k, L.D / 2 * k + 1, 0, 7); pctx.stroke(); }
+    }
+  }
+
+  function syncZoom() { $('zoom').value = Math.round(st.z * 100); $('zoomO').textContent = Math.round(st.z * 100) + ' %'; }
+  $('imgFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    Galeria.add({ blob: f, name: f.name, tag: 'original', sig: 'f:' + f.name + ':' + f.size + ':' + f.lastModified }).then(id => { if (id) $('galInfo').textContent = 'Guardada en la galería: ' + f.name; });
+    useBlob(f, { name: f.name }); e.target.value = '';
+  };
+  let curBlob = null, curName = 'Círculo';
+  function useBlob(b, o = {}) {
+    curBlob = b; curName = o.name || curName; if (!o.restore) tr.fork();
+    const im = new Image(); im.onload = () => { Object.assign(st, { img: im, z: 1, x: 0, y: 0 }, o.st || {}); syncZoom(); redraw(); };
+    im.onerror = () => alert('No se pudo leer la imagen'); im.src = URL.createObjectURL(b);
+  }
+  $('bGal').onclick = async () => { const r = await Galeria.pick(); if (r) useBlob(r.blob, { name: r.name }); };
+  $('zoom').oninput = e => { st.z = e.target.value / 100; syncZoom(); redraw(); };
+  $('bCenter').onclick = () => { st.x = 0; st.y = 0; redraw(); };
+  $('bReset').onclick = () => { Object.assign(st, { z: 1, x: 0, y: 0 }); syncZoom(); redraw(); };
+  ['diam', 'orient', 'margin', 'gap', 'sky', 'frame', 'cut', 'fc1', 'fc2', 'fc3'].forEach(id => { $(id).oninput = () => { $('frameOpts').hidden = !$('frame').checked; redraw(); }; $(id).onchange = $(id).oninput; });
+  $('fcReset').onclick = () => { $('fc1').value = '#12318f'; $('fc2').value = '#ffd60a'; $('fc3').value = '#1d46b8'; redraw(); };
+
+  // Arrastrar y pellizcar en el círculo editable
+  const ptrs = new Map(); let pinch = null;
+  const ri = () => (($('frame').checked ? 1 / 1.214 : 1) * ed.width / 2);
+  ed.addEventListener('pointerdown', e => { ed.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), z: st.z }; } });
+  ed.addEventListener('pointermove', e => {
+    const p = ptrs.get(e.pointerId); if (!p) return;
+    const k = ed.width / ed.getBoundingClientRect().width;
+    if (ptrs.size === 1) { st.x += (e.clientX - p.x) * k / (2 * ri()); st.y += (e.clientY - p.y) * k / (2 * ri()); }
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 2 && pinch) { const [a, b] = [...ptrs.values()]; st.z = Math.min(3, Math.max(.2, pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d)); syncZoom(); }
+    redraw();
+  });
+  const end = e => { ptrs.delete(e.pointerId); pinch = null; };
+  ed.addEventListener('pointerup', end); ed.addEventListener('pointercancel', end);
+  ed.addEventListener('wheel', e => { e.preventDefault(); st.z = Math.min(3, Math.max(.2, st.z * Math.exp(-e.deltaY * .0015))); syncZoom(); redraw(); }, { passive: false });
+
+  $('bPdf').onclick = async () => {
+    if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
+    const L = layout(); if (!L.n) { alert('El círculo no cabe en la hoja.'); return; }
+    const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1));
+    $('status').textContent = 'Generando PDF…'; await new Promise(r => setTimeout(r, 30));
+    const S = Math.round(L.D / 25.4 * 300), c = document.createElement('canvas'); c.width = c.height = S;
+    drawCircle(c.getContext('2d'), S);
+    const url = c.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: L.W > L.H ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+    for (let p = 0; p < sheets; p++) {
+      if (p) doc.addPage('a4', L.W > L.H ? 'landscape' : 'portrait');
+      doc.setDrawColor(150); doc.setLineWidth(0.15);
+      for (let r = 0; r < L.rows; r++) for (let cc = 0; cc < L.cols; cc++) {
+        const x = L.x0 + cc * (L.D + L.g), y = L.y0 + r * (L.D + L.g);
+        doc.addImage(url, 'PNG', x, y, L.D, L.D, 'circ', 'FAST');
+        if ($('cut').checked) doc.circle(x + L.D / 2, y + L.D / 2, L.D / 2 + 0.3, 'S');
+      }
+    }
+    doc.save('circulos.pdf');
+    $('status').textContent = `PDF generado: ${sheets} hoja(s), ${sheets * L.n} círculos.`;
+  };
+
+  // Historial
+  const IDS = ['diam', 'orient', 'margin', 'gap', 'sheets', 'fc1', 'fc2', 'fc3'], CK = ['sky', 'frame', 'cut'];
+  const tr = Galeria.tracker('circulo', async () => {
+    if (!st.img || !curBlob) return null;
+    const data = { z: st.z, x: st.x, y: st.y };
+    IDS.forEach(k => data[k] = $(k).value); CK.forEach(k => data[k] = $(k).checked);
+    const th = document.createElement('canvas'); th.width = th.height = 160; th.getContext('2d').drawImage(ed, 0, 0, 160, 160);
+    return { name: curName, summary: data.diam + ' cm · ' + (layout().n || 0) + ' por hoja', data, blobs: { img: curBlob }, thumb: th.toDataURL('image/png') };
+  });
+  $('bSave').onclick = async () => {
+    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', curName.replace(/\.[^.]+$/, "")); if (!nm) return;
+    const id = await tr.saveAs(nm.trim()); const b = $('bSave');
+    if (!id) { alert('Primero sube una imagen.'); return; }
+    b.textContent = '¡Guardado!'; setTimeout(() => b.textContent = 'Guardar diseño', 1800);
+  };
+  async function openProject(p) {
+    const d = p.data;
+    IDS.forEach(k => { if (d[k] !== undefined) $(k).value = d[k]; }); CK.forEach(k => { if (d[k] !== undefined) $(k).checked = d[k]; }); $('frameOpts').hidden = !$('frame').checked;
+    useBlob(p.blobs.img, { name: p.name, restore: true, st: { z: d.z, x: d.x, y: d.y } }); tr.rebase();
+  }
+  $('bHist').onclick = async () => { const p = await Galeria.history('circulo'); if (p) openProject(p); };
+  const abrir = new URLSearchParams(location.search).get('abrir'); if (abrir) Galeria.getProject(abrir).then(p => p && openProject(p));
+  redraw();
+})();
+</script>
+</body>
+</html>
