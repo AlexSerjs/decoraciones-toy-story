@@ -98,8 +98,23 @@ Siestas voluntarias | 0 %</textarea></div>
     </div>
 
     <div class="card">
+      <h2>0d. Tamaño y franja blanca</h2>
+      <div class="grid3" style="grid-template-columns:1fr 1fr">
+        <div><label for="lw">Largo (cm)</label><input type="number" id="lw" value="22" min="8" max="60" step="0.5"></div>
+        <div><label for="lh">Alto (cm)</label><input type="number" id="lh" value="5" min="2" max="25" step="0.5"></div>
+      </div>
+      <div class="hint" id="sizeInfo"></div>
+      <button class="btn sec block" id="sizeReset" style="margin-top:6px">Tamaño original (22 × 5 cm)</button>
+      <label class="radio" style="margin-top:12px"><input type="checkbox" id="stripOn" checked> Franja blanca de solape</label>
+      <div class="ctl"><label for="stripW">Ancho de la franja <output id="stripWO"></output></label><input type="range" id="stripW" min="2" max="30" step="0.5" value="6"></div>
+      <label for="stripSide">Dónde</label>
+      <select id="stripSide" style="width:100%;min-height:42px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;background:#fff"><option value="der">A la derecha</option><option value="izq">A la izquierda</option><option value="ambos">En los dos lados</option></select>
+      <div class="hint">La franja es la parte que se solapa al pegar la etiqueta en la botella.</div>
+    </div>
+
+    <div class="card">
       <h2>1. Plantilla (opcional)</h2>
-      <label class="btn block sec" for="tplFile">Subir plantilla PNG (2598 × 591)</label>
+      <label class="btn block sec" for="tplFile">Subir plantilla PNG (del tamaño de la etiqueta)</label>
       <input type="file" id="tplFile" accept="image/png,image/*">
       <label class="radio"><input type="checkbox" id="useFrame" checked> Marco 3D alrededor del círculo</label>
       <div class="hint" id="tplInfo">Opcional: sube una plantilla PNG propia y se usará en lugar del diseño.</div>
@@ -154,7 +169,7 @@ Siestas voluntarias | 0 %</textarea></div>
     <div class="stage"><canvas id="main" width="2598" height="591" tabindex="0" aria-label="Vista previa de la etiqueta"></canvas></div>
     <h2 style="margin-top:18px">Hoja A4 (así se imprime)</h2>
     <div class="stage"><canvas id="sheetPrev" aria-label="Vista previa de la hoja A4"></canvas></div>
-    <div class="hint">4 etiquetas de 22 × 5 cm, apiladas y centradas. Las marcas grises son las líneas de corte.</div>
+    <div class="hint" id="sheetInfo">Las marcas grises son las líneas de corte.</div>
   </div>
 </div>
 
@@ -162,8 +177,10 @@ Siestas voluntarias | 0 %</textarea></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (() => {
-  const W = 2598, H = 591;
+  let W = 2598, H = 591; // en píxeles a 300 ppp; cambian con el tamaño de la etiqueta (por defecto 22 × 5 cm)
   const $ = id => document.getElementById(id);
+  const num = (v, d) => { const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : d; };
+  const sizeCm = () => ({ w: Math.min(60, Math.max(8, num($('lw').value, 22))), h: Math.min(25, Math.max(2, num($('lh').value, 5))) });
   const main = $('main'), mctx = main.getContext('2d');
   const off = document.createElement('canvas'); off.width = W; off.height = H;
   const octx = off.getContext('2d');
@@ -199,10 +216,13 @@ Siestas voluntarias | 0 %</textarea></div>
   const BB = { logo: [[8, -5], [-6, 3], [10, -3], [-2, 5]], story: [[4, -3], [-4, 3], [5, -2], [-3, 4], [4, -3]], ano: [[6, -4], [-6, 3], [8, -3], [-2, 4]] };
   const spans = (text, pat) => { let i = 0; return [...text.toUpperCase()].map(c => { if (c === ' ') return ' '; const [ty, r] = pat[i++ % pat.length]; return `<span style="transform:translateY(${ty}px) rotate(${r}deg)">${esc(c)}</span>`; }).join(''); };
   const lgBlock = (text, pat, left, top, width, fs, rot) => { const sp = spans(text, pat); return `<div class="lg" style="left:${left}px;top:${top}px;width:${width}px;font-size:${fs}px;transform:rotate(${rot}deg)"><div class="o">${sp}</div><div class="m">${sp}</div><div class="f">${sp}</div></div>`; };
+  // Los elementos se diseñan para 2598 × 591 y se recolocan/escalan según el tamaño real de la etiqueta.
+  const geo = () => { const s = H / 591, A = W / 2 - 262 * s, A0 = 1039, c = Math.max(.2, Math.min(s, A / A0)); return { s, c, cxL: A * 500 / A0 }; };
   const wrapBlock = (key, cx0, cy0, home, inner) => {
     const p = POS[key]; if (!p.on) return '';
-    const dx = p.x + ($('flip').checked ? (home === 'L' ? 2598 - 2 * cx0 : 2598 - 2 * cx0) : 0);
-    return `<div style="position:absolute;left:0;top:0;width:2598px;height:591px;transform-origin:${cx0}px ${cy0}px;transform:translate(${dx}px,${p.y}px) scale(${p.s / 100})">${inner}</div>`;
+    const g = geo(); let X = home === 'L' ? g.cxL : W - g.cxL; if ($('flip').checked) X = W - X;
+    const Y = H / 2 + (cy0 - 295.5) * g.c, dx = X - cx0 + p.x * g.c, dy = Y - cy0 + p.y * g.c;
+    return `<div style="position:absolute;left:0;top:0;width:2598px;height:591px;transform-origin:${cx0}px ${cy0}px;transform:translate(${dx}px,${dy}px) scale(${g.c * p.s / 100})">${inner}</div>`;
   };
   function designMarkup() {
     const v = id => $(id).value, fill = v('cFill'), out = v('cOut'), rib = v('cRib');
@@ -222,9 +242,9 @@ Siestas voluntarias | 0 %</textarea></div>
 <div style="font-size:22px;font-weight:800;text-align:center;margin-top:2px;padding-bottom:8px;border-bottom:4px solid ${out}">${esc(v('cardSub'))}</div>
 <div style="display:flex;flex-direction:column;justify-content:space-between;flex-grow:1;padding-top:8px;font-size:${rfs}px;font-weight:800">${rowHtml}</div>
 <div style="font-size:20px;font-weight:800;text-align:center;padding-top:8px;border-top:4px solid ${out};margin-top:6px">${esc(v('cardFoot'))}</div></div>`;
-    const clouds = [[20, 40, 1.3], [790, 20, .9], [40, 470, .8], [860, 470, 1.1], [1620, 430, 1], [1660, 20, .8], [2330, 30, 1.2], [2400, 430, 1.1]].map(c => `<use href="#cl" transform="translate(${c[0]},${c[1]}) scale(${c[2]})"/>`).join('');
-    return { css, html: `<div style="position:relative;width:2598px;height:591px;overflow:hidden;background:linear-gradient(180deg,#5b9be0 0%,#86b8ee 100%)">
-<svg xmlns="http://www.w3.org/2000/svg" width="2598" height="591" viewBox="0 0 2598 591" style="position:absolute;left:0;top:0"><defs><g id="cl"><rect x="10" y="70" width="180" height="22" rx="11"/><circle cx="68" cy="62" r="30"/><circle cx="114" cy="44" r="40"/><circle cx="158" cy="66" r="24"/></g></defs><g fill="#fff">${clouds}</g></svg>
+    const gs = geo(), clouds = [[20, 40, 1.3], [790, 20, .9], [40, 470, .8], [860, 470, 1.1], [1620, 430, 1], [1660, 20, .8], [2330, 30, 1.2], [2400, 430, 1.1]].map(c => `<use href="#cl" transform="translate(${(c[0] * W / 2598).toFixed(1)},${(c[1] * H / 591).toFixed(1)}) scale(${(c[2] * gs.s).toFixed(3)})"/>`).join('');
+    return { css, html: `<div style="position:relative;width:${W}px;height:${H}px;overflow:hidden;background:linear-gradient(180deg,#5b9be0 0%,#86b8ee 100%)">
+<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="position:absolute;left:0;top:0"><defs><g id="cl"><rect x="10" y="70" width="180" height="22" rx="11"/><circle cx="68" cy="62" r="30"/><circle cx="114" cy="44" r="40"/><circle cx="158" cy="66" r="24"/></g></defs><g fill="#fff">${clouds}</g></svg>
 ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)}${wrapBlock('ficha', 2098, 378, 'R', ficha)}</div>` };
   }
   let fontCssP = null;
@@ -249,25 +269,27 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
   }
   // posición y tamaño de cada elemento
   const syncPos = () => { const p = POS[$('bsel').value]; $('px').value = p.x; $('py').value = p.y; $('ps').value = p.s; $('pon').checked = p.on; $('pxO').textContent = p.x; $('pyO').textContent = p.y; $('psO').textContent = p.s + ' %'; };
-  function drawFrame(ctx, cx, cy, r) { // marco 3D alrededor de la foto
+  function drawFrame(ctx, cx, cy, r) { // marco 3D alrededor de la foto (proporcional al tamaño del círculo)
+    const k = r / 215;
     ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10;
-    ring(ctx, cx, cy, r + 46, r - 1, NAVY); ctx.restore();
-    ring(ctx, cx, cy, r + 46, r + 34, NAVY);
+    ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 24 * k; ctx.shadowOffsetY = 10 * k;
+    ring(ctx, cx, cy, r + 46 * k, r - 1, NAVY); ctx.restore();
+    ring(ctx, cx, cy, r + 46 * k, r + 34 * k, NAVY);
     const gy = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
     gy.addColorStop(0, '#fff59a'); gy.addColorStop(.5, YEL); gy.addColorStop(1, '#e09b00');
-    ring(ctx, cx, cy, r + 34, r + 20, gy);
+    ring(ctx, cx, cy, r + 34 * k, r + 20 * k, gy);
     const gb = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
     gb.addColorStop(0, '#3f72e8'); gb.addColorStop(.5, '#1d46b8'); gb.addColorStop(1, '#0c2270');
-    ring(ctx, cx, cy, r + 20, r - 1, gb);
+    ring(ctx, cx, cy, r + 20 * k, r - 1, gb);
     ctx.lineCap = 'round'; // brillos
-    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5;
-    ctx.beginPath(); ctx.arc(cx, cy, r + 40, Math.PI * 1.05, Math.PI * 1.4); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6;
-    ctx.beginPath(); ctx.arc(cx, cy, r + 10, Math.PI * 1.08, Math.PI * 1.38); ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 6; // sombra interior
-    ctx.beginPath(); ctx.arc(cx, cy, r + 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 5 * k;
+    ctx.beginPath(); ctx.arc(cx, cy, r + 40 * k, Math.PI * 1.05, Math.PI * 1.4); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 6 * k;
+    ctx.beginPath(); ctx.arc(cx, cy, r + 10 * k, Math.PI * 1.08, Math.PI * 1.38); ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 6 * k; // sombra interior
+    ctx.beginPath(); ctx.arc(cx, cy, r + 3 * k, 0, Math.PI * 2); ctx.stroke();
   }
+
 
   function render(ctx, s) {
     const { x: cx, y: cy, r } = circ();
@@ -290,28 +312,45 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
       ctx.restore();
     }
     if ($('useFrame').checked) drawFrame(ctx, cx, cy, r);
+    if ($('stripOn').checked) { // franja blanca de solape en el borde de la etiqueta
+      const w = Math.round(num($('stripW').value, 6) / 25.4 * 300), side = $('stripSide').value; ctx.fillStyle = '#fff';
+      if (side !== 'izq') ctx.fillRect(W - w, 0, w, H); if (side !== 'der') ctx.fillRect(0, 0, w, H);
+    }
   }
 
   let raf = 0;
   function redraw() { tr.touch(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); }
+  // Distribución en A4: etiquetas apiladas y centradas, sin hueco, con 5 mm de margen para las marcas de corte
+  function sheetLayout() {
+    const { w, h } = sizeCm(), lw = w * 10, lh = h * 10, m = 5;
+    const calc = (PW, PH) => { const cols = Math.max(0, Math.floor((PW - 2 * m) / lw)), rows = Math.max(0, Math.floor((PH - 2 * m) / lh)); return { PW, PH, cols, rows, n: cols * rows }; };
+    const l = calc(297, 210), p = calc(210, 297), L = p.n > l.n ? p : l;
+    L.lw = lw; L.lh = lh; L.x0 = (L.PW - L.cols * lw) / 2; L.y0 = (L.PH - L.rows * lh) / 2; L.land = L.PW > L.PH; return L;
+  }
+  const slotFor = k => slots[mode === 'same' ? 0 : k % 4];
+  function marks(L, line) { // marcas de corte en los márgenes, en cada línea de corte
+    const g = 1.5, ml = 5, mv = 3, x1 = L.x0 + L.cols * L.lw, y1 = L.y0 + L.rows * L.lh;
+    for (let j = 0; j <= L.rows; j++) { const y = L.y0 + j * L.lh; line(L.x0 - g - ml, y, L.x0 - g, y); line(x1 + g, y, x1 + g + ml, y); }
+    for (let i = 0; i <= L.cols; i++) { const x = L.x0 + i * L.lw; line(x, L.y0 - g - mv, x, L.y0 - g); line(x, y1 + g, x, y1 + g + mv); }
+  }
   function draw() {
     render(mctx, cur());
-    // hoja A4 como en el PDF: 4 etiquetas de 220 × 50 mm apiladas y centradas, con marcas de corte
-    const sp = $('sheetPrev'), k = 3, X0 = 38.5, Y0 = 5, LW = 220, LH = 50;
-    if (sp.width !== 297 * k) { sp.width = 297 * k; sp.height = 210 * k; }
+    // hoja A4 como en el PDF
+    const L = sheetLayout(), sp = $('sheetPrev'), k = 3;
+    if (sp.width !== L.PW * k || sp.height !== L.PH * k) { sp.width = L.PW * k; sp.height = L.PH * k; }
     const sc = sp.getContext('2d'); sc.fillStyle = '#fff'; sc.fillRect(0, 0, sp.width, sp.height);
-    const place = i => sc.drawImage(off, X0 * k, (Y0 + i * LH) * k, LW * k, LH * k);
-    if (mode === 'diff') {
-      document.querySelectorAll('.thumb canvas').forEach((c, i) => {
-        render(octx, slots[i]);
-        const t = c.getContext('2d'); t.drawImage(off, 0, 0, c.width, c.height); place(i);
-      });
-    } else { render(octx, slots[0]); for (let i = 0; i < 4; i++) place(i); }
-    sc.strokeStyle = '#999'; sc.lineWidth = 1; sc.beginPath();
-    for (let i = 0; i <= 4; i++) { const y = (Y0 + i * LH) * k; sc.moveTo((X0 - 6.5) * k, y); sc.lineTo((X0 - 1.5) * k, y); sc.moveTo((X0 + LW + 1.5) * k, y); sc.lineTo((X0 + LW + 6.5) * k, y); }
-    [X0, X0 + LW].forEach(x => { sc.moveTo(x * k, (Y0 - 4.5) * k); sc.lineTo(x * k, (Y0 - 1.5) * k); sc.moveTo(x * k, (Y0 + 4 * LH + 1.5) * k); sc.lineTo(x * k, (Y0 + 4 * LH + 4.5) * k); });
-    sc.stroke();
+    $('sheetInfo').textContent = L.n ? `Caben ${L.n} etiquetas de ${(L.lw / 10).toFixed(1).replace(/\.0$/, '')} × ${(L.lh / 10).toFixed(1).replace(/\.0$/, '')} cm por hoja A4 (${L.cols} × ${L.rows}, ${L.land ? 'horizontal' : 'vertical'}). Las marcas grises son las líneas de corte.` : 'La etiqueta no cabe en una hoja A4: reduce el largo o el alto.';
+    const place = (i, r, c) => sc.drawImage(off, (L.x0 + c * L.lw) * k, (L.y0 + r * L.lh) * k, L.lw * k, L.lh * k);
+    const cache = {};
+    for (let n = 0; n < L.n; n++) {
+      const r = Math.floor(n / L.cols), c = n % L.cols, key = mode === 'same' ? 0 : n % 4;
+      if (!cache[key]) { render(octx, slotFor(n)); cache[key] = document.createElement('canvas'); cache[key].width = off.width; cache[key].height = off.height; cache[key].getContext('2d').drawImage(off, 0, 0); }
+      sc.drawImage(cache[key], (L.x0 + c * L.lw) * k, (L.y0 + r * L.lh) * k, L.lw * k, L.lh * k);
+    }
+    if (mode === 'diff') document.querySelectorAll('.thumb canvas').forEach((c, i) => { render(octx, slots[i]); c.getContext('2d').drawImage(off, 0, 0, c.width, c.height); });
+    sc.strokeStyle = '#999'; sc.lineWidth = 1; sc.beginPath(); marks(L, (x1, y1, x2, y2) => { sc.moveTo(x1 * k, y1 * k); sc.lineTo(x2 * k, y2 * k); }); sc.stroke();
   }
+
 
   function syncUI() {
     const s = cur();
@@ -362,7 +401,7 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
     try {
       tpl = await loadImg(f); tplBlob = f; $('useDesign').checked = false;
       $('tplInfo').textContent = `${f.name} — ${tpl.naturalWidth} × ${tpl.naturalHeight} px` +
-        ((tpl.naturalWidth !== W || tpl.naturalHeight !== H) ? ' (se escala a 2598 × 591)' : '');
+        ((tpl.naturalWidth !== W || tpl.naturalHeight !== H) ? ` (se escala a ${W} × ${H})` : '');
       redraw();
     } catch (err) { alert(err.message); }
     e.target.value = '';
@@ -458,44 +497,31 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
   };
   $('bPdf').onclick = async () => {
     if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
+    const L = sheetLayout(); if (!L.n) { alert('La etiqueta no cabe en una hoja A4. Reduce el largo o el alto.'); return; }
     await designPromise; const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1));
     status('Generando PDF…'); await new Promise(r => setTimeout(r, 30));
-    const urls = [];
-    for (let i = 0; i < 4; i++) {
-      render(octx, slots[mode === 'same' ? 0 : i]);
-      urls.push(off.toDataURL('image/png'));
-    }
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const LW = 220, LH = 50, x0 = (297 - LW) / 2, y0 = (210 - 4 * LH) / 2; // 38,5 · 5
+    const urls = {};
+    for (let n = 0; n < L.n; n++) { const key = mode === 'same' ? 0 : n % 4; if (!urls[key]) { render(octx, slotFor(n)); urls[key] = off.toDataURL('image/png'); } }
+    const { jsPDF } = window.jspdf, ori = L.land ? 'landscape' : 'portrait';
+    const doc = new jsPDF({ orientation: ori, unit: 'mm', format: 'a4' });
     for (let p = 0; p < sheets; p++) {
-      if (p > 0) doc.addPage('a4', 'landscape');
-      for (let i = 0; i < 4; i++) doc.addImage(urls[i], 'PNG', x0, y0 + i * LH, LW, LH, 'lab' + i, 'FAST');
-      doc.setDrawColor(150); doc.setLineWidth(0.15);
-      const mk = 5, gap = 1.5;
-      for (let i = 0; i <= 4; i++) {
-        const y = y0 + i * LH;
-        doc.line(x0 - gap - mk, y, x0 - gap, y);
-        doc.line(x0 + LW + gap, y, x0 + LW + gap + mk, y);
-      }
-      // marcas verticales en los márgenes superior e inferior
-      [x0, x0 + LW].forEach(x => {
-        doc.line(x, y0 - gap - 3, x, y0 - gap);
-        doc.line(x, y0 + 4 * LH + gap, x, y0 + 4 * LH + gap + 3);
-      });
+      if (p > 0) doc.addPage('a4', ori);
+      for (let n = 0; n < L.n; n++) { const r = Math.floor(n / L.cols), c = n % L.cols, key = mode === 'same' ? 0 : n % 4; doc.addImage(urls[key], 'PNG', L.x0 + c * L.lw, L.y0 + r * L.lh, L.lw, L.lh, 'lab' + key, 'FAST'); }
+      doc.setDrawColor(150); doc.setLineWidth(0.15); marks(L, (x1, y1, x2, y2) => doc.line(x1, y1, x2, y2));
     }
     doc.save('etiquetas.pdf');
-    status(`PDF generado: ${sheets} hoja(s), ${sheets * 4} etiquetas.`);
+    status(`PDF generado: ${sheets} hoja(s), ${sheets * L.n} etiquetas.`);
   };
 
+
   // Historial
-  const TX = ['tName', 'tSub', 'tBig', 'cFill', 'cOut', 'cRib', 'cardTitle', 'cardSub', 'cardRows', 'cardFoot', 'cx', 'cy', 'cr', 'sheets'];
+  const TX = ['lw', 'lh', 'stripW', 'stripSide', 'tName', 'tSub', 'tBig', 'cFill', 'cOut', 'cRib', 'cardTitle', 'cardSub', 'cardRows', 'cardFoot', 'cx', 'cy', 'cr', 'sheets'];
   const tr = Galeria.tracker('botella', async () => {
     if (!slots.some(s => s.blob)) return null;
     const blobs = {}; slots.forEach((s, i) => { if (s.blob) blobs['s' + i] = s.blob; }); if (tplBlob) blobs.tpl = tplBlob;
     const th = document.createElement('canvas'); th.width = 400; th.height = 91; th.getContext('2d').drawImage(main, 0, 0, 400, 91);
     const data = { mode, sel, useDesign: $('useDesign').checked, useFrame: $('useFrame').checked, slots: slots.map(s => ({ x: s.x, y: s.y, z: s.z, rot: s.rot, name: s.name })) };
-    TX.forEach(k => data[k] = $(k).value); data.pos = JSON.parse(JSON.stringify(POS)); data.flip = $('flip').checked;
+    TX.forEach(k => data[k] = $(k).value); data.pos = JSON.parse(JSON.stringify(POS)); data.flip = $('flip').checked; data.stripOn = $('stripOn').checked;
     return { name: (slots.find(s => s.blob) || {}).name || 'Etiqueta', summary: mode === 'same' ? 'Misma imagen en las 4' : 'Imágenes distintas', data, blobs, thumb: th.toDataURL('image/jpeg', .75) };
   });
   $('bSave').onclick = async () => {
@@ -513,12 +539,27 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
       }
       mode = d.mode || 'same'; sel = d.sel || 0; document.querySelector('input[name=mode][value=' + mode + ']').checked = true; $('thumbs').hidden = mode !== 'diff';
       $('useDesign').checked = !!d.useDesign; $('useFrame').checked = d.useFrame !== false; TX.forEach(k => { if (d[k] !== undefined) $(k).value = d[k]; });
-      if (d.pos) for (const k in POS) if (d.pos[k]) Object.assign(POS[k], d.pos[k]); $('flip').checked = !!d.flip; syncPos(); await rebuildDesign();
+      if (d.pos) for (const k in POS) if (d.pos[k]) Object.assign(POS[k], d.pos[k]); $('flip').checked = !!d.flip;
+      if (d.lw === undefined) { $('lw').value = 22; $('lh').value = 5; } // diseños anteriores: tamaño original y sin franja
+      $('stripOn').checked = d.stripOn === undefined ? false : !!d.stripOn; $('stripWO').textContent = $('stripW').value + ' mm'; applySize(false);
+      syncPos(); await rebuildDesign();
       if (p.blobs.tpl) { tpl = await loadImg(p.blobs.tpl); tplBlob = p.blobs.tpl; }
       update(); tr.rebase();
     } catch (err) { alert(err.message); }
   }
   $('bHist').onclick = async () => { const p = await Galeria.history('botella'); if (p) openProject(p); };
+  // Tamaño de la etiqueta y franja blanca
+  function applySize(resetCircle) {
+    const { w, h } = sizeCm(); W = Math.round(w / 2.54 * 300); H = Math.round(h / 2.54 * 300);
+    main.width = W; main.height = H; off.width = W; off.height = H;
+    document.querySelectorAll('.thumb canvas').forEach(c => { c.height = Math.round(c.width * H / W); });
+    if (resetCircle) { $('cx').value = Math.round(W / 2); $('cy').value = Math.round(H / 2); $('cr').value = Math.round(215 * H / 591); }
+    $('sizeInfo').textContent = `${w} × ${h} cm → ${W} × ${H} px a 300 ppp`;
+  }
+  ['lw', 'lh'].forEach(id => { $(id).oninput = () => { applySize(true); scheduleDesign(); redraw(); }; $(id).onchange = $(id).oninput; });
+  $('sizeReset').onclick = () => { $('lw').value = 22; $('lh').value = 5; applySize(true); scheduleDesign(); redraw(); };
+  ['stripOn', 'stripW', 'stripSide'].forEach(id => { $(id).oninput = () => { $('stripWO').textContent = $('stripW').value + ' mm'; redraw(); }; $(id).onchange = $(id).oninput; });
+  $('stripWO').textContent = $('stripW').value + ' mm'; applySize(false);
   syncPos(); scheduleDesign();
   update();
   const abrir = new URLSearchParams(location.search).get('abrir'); if (abrir) Galeria.getProject(abrir).then(p => p && openProject(p));
