@@ -268,7 +268,76 @@
     return { ni, np };
   }
 
-  window.Galeria = { ask, exportAll, importAll, electron: EL, config: () => EL ? TS('cfg.get') : Promise.resolve({ electron: false }), chooseDataDir: () => TS('cfg.choose'), openDataDir: () => TS('cfg.open'), resetDataDir: () => TS('cfg.reset'), getProject, saveProject, listProjects, removeProject, tracker, history, add, list, get, remove, status, sync, pick: () => open(true), manage: () => open(false) };
+
+  // ---- Quitar fondo (compartido): remove.bg (clave en Ajustes) -> IA local (ia-modelo/) -> color liso ----
+  const mkc = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+  const loadScript = src => new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = () => { el.remove(); res(); }; el.onerror = () => { el.remove(); rej(new Error('falta ' + src)); }; document.head.appendChild(el); });
+  let shimOn = false;
+  function installShim() {
+    if (shimOn) return; shimOn = true; const of = window.fetch, BASE = 'https://ia.local/';
+    window.fetch = async function (u, o) {
+      const url = String(u && u.url || u); if (!url.startsWith(BASE)) return of.call(this, u, o);
+      const name = url.slice(BASE.length).split('?')[0];
+      if (name === 'resources.json') { await loadScript('ia-modelo/resources.js'); return new Response(JSON.stringify(window.__IA_RES), { headers: { 'content-type': 'application/json' } }); }
+      if (!(window.__IA && window.__IA[name])) await loadScript('ia-modelo/js/' + name + '.js');
+      const bin = atob(window.__IA[name]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      delete window.__IA[name]; return new Response(u8, { headers: { 'content-type': 'application/octet-stream' } });
+    };
+  }
+  const errMsg = e => String((e && e.message) || e).replace(/^Error:\s*/, '').slice(0, 140);
+  const toCanvas = async blob => { const im = await createImageBitmap(blob), c = mkc(im.width, im.height); c.getContext('2d').drawImage(im, 0, 0); return c; };
+  function uniformBg(c) {
+    const w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data, pts = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1], [w >> 1, 0], [w >> 1, h - 1], [0, h >> 1], [w - 1, h >> 1]];
+    const cols = pts.map(([x, y]) => { const i = (y * w + x) * 4; return [d[i], d[i + 1], d[i + 2], d[i + 3]]; });
+    if (cols.some(q => q[3] < 250)) return false;
+    return cols.every(q => Math.hypot(q[0] - cols[0][0], q[1] - cols[0][1], q[2] - cols[0][2]) < 40);
+  }
+  function removeColor(c, tol) {
+    const w = c.width, h = c.height, ctx = c.getContext('2d'), img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const cs = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]]; let r = 0, g = 0, b = 0;
+    cs.forEach(([x, y]) => { const i = (y * w + x) * 4; r += d[i]; g += d[i + 1]; b += d[i + 2]; }); r /= 4; g /= 4; b /= 4;
+    const t2 = tol * tol, seen = new Uint8Array(w * h), stack = [];
+    const push = (x, y) => { const k = y * w + x, i = k * 4; if (!seen[k]) { const dr = d[i] - r, dg = d[i + 1] - g, db = d[i + 2] - b; if (dr * dr + dg * dg + db * db <= t2) { seen[k] = 1; stack.push(k); } } };
+    for (let x = 0; x < w; x++) { push(x, 0); push(x, h - 1); } for (let y = 0; y < h; y++) { push(0, y); push(w - 1, y); }
+    while (stack.length) { const k = stack.pop(), x = k % w, y = (k - x) / w; d[k * 4 + 3] = 0; if (x > 0) push(x - 1, y); if (x < w - 1) push(x + 1, y); if (y > 0) push(x, y - 1); if (y < h - 1) push(x, y + 1); }
+    ctx.putImageData(img, 0, 0); return c;
+  }
+  function trimCanvas(c) { // recorta al rectángulo de píxeles no transparentes (así la imagen se ajusta al tamaño del círculo)
+    const w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0 || (x0 === 0 && y0 === 0 && x1 === w - 1 && y1 === h - 1)) return c;
+    const o = mkc(x1 - x0 + 1, y1 - y0 + 1); o.getContext('2d').drawImage(c, x0, y0, o.width, o.height, 0, 0, o.width, o.height); return o;
+  }
+  // quitarFondo(blob, {name, trim, onStatus}) -> {blob, how}; lanza Error con el motivo si no se pudo
+  async function quitarFondo(src, o = {}) {
+    const say = m => { try { o.onStatus && o.onStatus(m); } catch (e) { } }, fails = [];
+    let key = ''; try { key = (localStorage.getItem('toystory-removebg') || '').trim(); } catch (e) { }
+    const fin = async (c, how) => { if (o.trim !== false) c = trimCanvas(c); const blob = await new Promise(r => c.toBlob(r, 'image/png')); return { blob, how }; };
+    if (key) {
+      say('Quitando el fondo con remove.bg…');
+      try {
+        const fd = new FormData(); fd.append('image_file', src, o.name || 'imagen.png'); fd.append('size', 'auto'); fd.append('format', 'png');
+        const r = await fetch('https://api.remove.bg/v1.0/removebg', { method: 'POST', headers: { 'X-Api-Key': key }, body: fd });
+        if (!r.ok) { let m = 'error ' + r.status; try { const j = await r.json(); m = (j.errors && j.errors[0] && j.errors[0].title) || m; } catch (e) { } throw new Error(/api key/i.test(m) ? 'la clave no es válida (revísala en ⚙ Ajustes)' : m); }
+        return await fin(await toCanvas(await r.blob()), 'remove.bg');
+      } catch (e) { fails.push('remove.bg: ' + errMsg(e)); }
+    }
+    let local = false; try { local = (await fetch('ia-modelo/resources.js', { method: 'HEAD' })).ok; } catch (e) { }
+    if (local) {
+      say('Quitando el fondo con la IA… (la primera vez puede tardar un poco)');
+      try {
+        const mod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm'); installShim();
+        const out = await mod.removeBackground(src, { publicPath: 'https://ia.local/', model: 'isnet_quint8', progress: (k, cur, tot) => say(`Quitando el fondo con la IA… ${tot ? Math.round(cur / tot * 100) : 0} %`) });
+        return await fin(await toCanvas(out), 'IA');
+      } catch (e) { fails.push('IA local: ' + errMsg(e)); }
+    }
+    const c = await toCanvas(src);
+    if (uniformBg(c)) return await fin(removeColor(c, 40), 'color');
+    const err = new Error((fails.length ? 'No se pudo quitar el fondo (' + fails.join(' · ') + '). ' : '') + (key ? '' : 'Para quitar fondos hace falta una clave gratuita de remove.bg: los pasos están en ⚙ Ajustes. ') + 'También puedes subir un PNG que ya no tenga fondo.');
+    throw err;
+  }
+
+  window.Galeria = { quitarFondo, ask, exportAll, importAll, electron: EL, config: () => EL ? TS('cfg.get') : Promise.resolve({ electron: false }), chooseDataDir: () => TS('cfg.choose'), openDataDir: () => TS('cfg.open'), resetDataDir: () => TS('cfg.reset'), getProject, saveProject, listProjects, removeProject, tracker, history, add, list, get, remove, status, sync, pick: () => open(true), manage: () => open(false) };
 
   // ---- Menús desplegables (se abre uno solo): convierte las tarjetas del panel izquierdo ----
   function acordeon() {

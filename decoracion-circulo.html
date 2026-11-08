@@ -21,6 +21,16 @@
   .btn.sec:hover{background:#eef4fd}
   .btn.block{width:100%}
   .row{display:flex;gap:8px;flex-wrap:wrap}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .chip{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;width:92px}
+  .chip.sel{border-color:var(--acc);background:#eef4fd}
+  .chip canvas{width:64px;height:64px;border-radius:50%;background:#e6e9ee}
+  .chip .num{position:absolute;top:2px;left:6px;font-size:12px;font-weight:700;color:var(--acc)}
+  .chip .x{position:absolute;top:0;right:2px;border:0;background:none;font-size:16px;line-height:1;color:#a33;cursor:pointer;padding:2px 4px}
+  .chip label{font-size:11px;color:#556;display:flex;align-items:center;gap:3px}
+  .chip input{width:46px;padding:3px 4px;font-size:13px;text-align:center}
+  .pnav{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .pnav .btn{min-height:34px;padding:4px 12px}
   .row>*{flex:1}
   .ctl{margin:10px 0}
   .ctl label,.f label{display:flex;justify-content:space-between;font-size:.85rem;color:var(--mut);margin-bottom:4px}
@@ -50,11 +60,24 @@
     <h1>Círculos de decoración</h1>
 
     <div class="card">
-      <h2>1. Imagen (PNG sin fondo)</h2>
+      <h2>Tus círculos</h2>
+      <div class="chips" id="chips"></div>
+      <button class="btn sec block" id="bAdd" style="min-height:40px">+ Añadir otro círculo</button>
+      <div class="help" style="margin-top:8px">Toca un círculo para editarlo. Cada uno tiene su propia imagen y posición. «Copias» = cuántas veces se repite en la hoja; si pasan de una hoja, el PDF sigue en otra página.</div>
+      <button class="btn sec block" id="bFill" style="margin-top:8px;min-height:40px">Llenar una hoja con el círculo seleccionado</button>
+    </div>
+
+    <div class="card">
+      <h2>1. Imagen del círculo seleccionado</h2>
       <label class="btn block" for="imgFile">Subir imagen PNG</label>
       <input type="file" id="imgFile" accept="image/png,image/webp,image/jpeg">
       <button class="btn sec block" id="bGal" style="margin-top:8px">Elegir de la galería</button>
       <div class="hint" id="galInfo">Las imágenes se guardan solas en la galería.</div>
+      <button class="btn block" id="bRemove" disabled style="margin-top:10px">Quitar fondo</button>
+      <button class="btn sec block" id="bUndo" disabled style="margin-top:8px">Volver a la original</button>
+      <label class="chk"><input type="checkbox" id="trim" checked> Ajustar la imagen al círculo (recortar márgenes vacíos)</label>
+      <div class="hint">Quita el fondo con remove.bg (clave gratuita en <a href="ajustes.html">⚙ Ajustes</a>), con la IA guardada o, si el fondo es de un solo color, sin clave. El resultado se guarda en la galería como «sin fondo».</div>
+      <div class="warn" id="bgWarn" hidden></div>
       <div class="ctl"><label for="zoom">Tamaño <output id="zoomO">100 %</output></label>
         <input type="range" id="zoom" min="20" max="300" value="100"></div>
       <div class="row">
@@ -90,7 +113,7 @@
 
     <div class="card">
       <h2>3. Exportar</h2>
-      <div class="ctl"><label for="sheets">Número de hojas</label><input type="number" id="sheets" value="1" min="1" max="100"></div>
+      <div class="info" id="pagesInfo"></div>
       <button class="btn block" id="bPdf">Descargar PDF (A4)</button>
       <div class="help" style="margin-top:10px">Imprime a tamaño real (100 %), sin ajustar a página.</div>
       <div class="hint" id="status"></div>
@@ -99,22 +122,24 @@
 
   <div class="preview">
     <div class="card">
-      <h2>Un círculo</h2>
+      <h2 id="editTitle">Círculo 1</h2>
       <div class="stage"><canvas id="edit" width="840" height="840" aria-label="Círculo editable"></canvas></div>
     </div>
     <div class="card">
       <h2>Hoja A4 (vista previa)</h2>
+      <div class="pnav"><button class="btn sec" id="pPrev">◀</button><span id="pLbl">Hoja 1 de 1</span><button class="btn sec" id="pNext">▶</button><span class="help" style="margin:0 0 0 auto">Toca un círculo de la hoja para editarlo</span></div>
       <div class="stage"><canvas id="page"></canvas></div>
     </div>
   </div>
 </div>
 
-<script src="galeria.js?v=6"></script>
+<script src="galeria.js?v=7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (() => {
   const $ = id => document.getElementById(id);
-  const st = { img: null, z: 1, x: 0, y: 0 }; // x,y: fracción del diámetro interior
+  const newItem = copies => ({ img: null, z: 1, x: 0, y: 0, blob: null, orig: null, name: 'Círculo', copies });
+  const items = []; let st, cur = 0, pv = 0, lastN = 0; // x,y: fracción del diámetro interior
   const NAVY = '#12318f', YEL = '#ffd60a';
 
   function cloud(ctx, x, y, s) {
@@ -131,7 +156,7 @@
   function ring(ctx, c, r1, r2, fill) {
     ctx.beginPath(); ctx.moveTo(c + r1, c); ctx.arc(c, c, r1, 0, Math.PI * 2); ctx.closePath(); ctx.moveTo(c + r2, c); ctx.arc(c, c, r2, 0, Math.PI * 2, true); ctx.closePath(); ctx.fillStyle = fill; ctx.fill('evenodd');
   }
-  function drawCircle(ctx, S) {
+  function drawCircle(ctx, S, st) {
     const R = S / 2, frame = $('frame').checked, ri = frame ? R / 1.214 : R;
     ctx.clearRect(0, 0, S, S);
     ctx.save(); ctx.beginPath(); ctx.arc(R, R, R, 0, 7); ctx.clip();
@@ -181,23 +206,63 @@
   const ed = $('edit'), ectx = ed.getContext('2d'), pg = $('page'), pctx = pg.getContext('2d');
   let raf = 0;
   const redraw = () => { tr.touch(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); };
+  const slots = () => { const a = []; items.forEach((it, i) => { for (let c = 0; c < it.copies; c++) a.push(i); }); return a; };
+  const chipsEl = $('chips');
+  function renderChips() {
+    chipsEl.innerHTML = '';
+    items.forEach((it, i) => {
+      const d = document.createElement('div'); d.className = 'chip' + (i === cur ? ' sel' : ''); d.dataset.i = i;
+      d.innerHTML = '<span class="num">' + (i + 1) + '</span>' + (items.length > 1 ? '<button class="x" title="Quitar este círculo">✕</button>' : '') + '<canvas width="128" height="128"></canvas><label>×<input type="number" min="0" max="999" value="' + it.copies + '" title="Copias"></label>';
+      d.onclick = e => {
+        if (e.target.classList.contains('x')) { if (confirm('¿Quitar el círculo ' + (i + 1) + '?')) { items.splice(i, 1); select(Math.min(cur, items.length - 1)); } return; }
+        if (e.target.tagName !== 'INPUT') select(i);
+      };
+      d.querySelector('input').oninput = e => { it.copies = Math.max(0, Math.min(999, parseInt(e.target.value) || 0)); redraw(); };
+      chipsEl.appendChild(d);
+    });
+  }
+  function select(i) {
+    cur = i; st = items[i]; pv = Math.min(pv, 9999);
+    renderChips(); $('editTitle').textContent = 'Círculo ' + (i + 1) + ' de ' + items.length;
+    $('bRemove').disabled = !st.blob; $('bUndo').disabled = !st.blob || st.blob === st.orig; $('trim').checked = true;
+    $('bgWarn').hidden = true; syncZoom(); redraw();
+  }
   function draw() {
-    drawCircle(ectx, ed.width);
+    drawCircle(ectx, ed.width, st);
     const L = layout();
+    if (L.n !== lastN) { items.forEach((it, i) => { if (it.copies === lastN && items.length === 1) { it.copies = L.n; const inp = chipsEl.querySelectorAll('input')[i]; if (inp) inp.value = L.n; } }); lastN = L.n; }
+    chipsEl.querySelectorAll('.chip').forEach((d, i) => { const c = d.querySelector('canvas'); c.getContext('2d').clearRect(0, 0, 128, 128); drawCircle(c.getContext('2d'), 128, items[i]); });
     const k = 3; // px por mm en la vista previa
+    const sl = slots(), pages = L.n ? Math.max(1, Math.ceil(sl.length / L.n)) : 1;
+    pv = Math.max(0, Math.min(pv, pages - 1));
+    $('pLbl').textContent = 'Hoja ' + (pv + 1) + ' de ' + pages; $('pPrev').disabled = pv === 0; $('pNext').disabled = pv >= pages - 1;
+    $('pagesInfo').textContent = L.n ? `${sl.length} círculos en total → ${pages} hoja(s) (caben ${L.n} por hoja: ${L.cols} × ${L.rows}, ${L.W > L.H ? 'horizontal' : 'vertical'}).` : '';
     pg.width = L.W * k; pg.height = L.H * k;
     pctx.fillStyle = '#fff'; pctx.fillRect(0, 0, pg.width, pg.height);
     $('count').textContent = L.n ? `Caben ${L.n} círculos por hoja (${L.cols} × ${L.rows}), hoja ${L.W > L.H ? 'horizontal' : 'vertical'}.` : '';
     const w = $('warn'); w.hidden = L.n > 0;
     if (!L.n) { w.textContent = 'El círculo no cabe en la hoja con ese margen. Reduce el diámetro.'; return; }
-    const sp = document.createElement('canvas'), S = Math.round(L.D * k * 2); sp.width = sp.height = S;
-    drawCircle(sp.getContext('2d'), S);
-    for (let r = 0; r < L.rows; r++) for (let c = 0; c < L.cols; c++) {
+    const S = Math.round(L.D * k * 2), sprites = {};
+    for (let q = 0; q < L.n; q++) {
+      const idx = sl[pv * L.n + q]; if (idx === undefined) break;
+      const r = Math.floor(q / L.cols), c = q % L.cols;
       const x = L.x0 + c * (L.D + L.g), y = L.y0 + r * (L.D + L.g);
-      pctx.drawImage(sp, x * k, y * k, L.D * k, L.D * k);
+      if (!sprites[idx]) { const sp = document.createElement('canvas'); sp.width = sp.height = S; drawCircle(sp.getContext('2d'), S, items[idx]); sprites[idx] = sp; }
+      pctx.drawImage(sprites[idx], x * k, y * k, L.D * k, L.D * k);
       if ($('cut').checked) { pctx.strokeStyle = '#999'; pctx.lineWidth = 1; pctx.beginPath(); pctx.arc((x + L.D / 2) * k, (y + L.D / 2) * k, L.D / 2 * k + 1, 0, 7); pctx.stroke(); }
+      if (idx === cur) { pctx.strokeStyle = '#2a6fdb'; pctx.lineWidth = 3; pctx.beginPath(); pctx.arc((x + L.D / 2) * k, (y + L.D / 2) * k, L.D / 2 * k + 3, 0, 7); pctx.stroke(); }
     }
   }
+  pg.addEventListener('click', e => {
+    const L = layout(); if (!L.n) return; const rc = pg.getBoundingClientRect(), k = pg.width / rc.width / 3;
+    const mx = (e.clientX - rc.left) * k, my = (e.clientY - rc.top) * k, sl = slots();
+    const c = Math.floor((mx - L.x0) / (L.D + L.g)), r = Math.floor((my - L.y0) / (L.D + L.g));
+    if (c < 0 || r < 0 || c >= L.cols || r >= L.rows) return;
+    const idx = sl[pv * L.n + r * L.cols + c]; if (idx !== undefined && idx !== cur) select(idx);
+  });
+  $('pPrev').onclick = () => { pv--; redraw(); }; $('pNext').onclick = () => { pv++; redraw(); };
+  $('bAdd').onclick = () => { if (items.length === 1 && items[0].copies === lastN) items[0].copies = 1; items.push(newItem(1)); select(items.length - 1); pv = 0; setTimeout(() => { const l = chipsEl.lastElementChild; if (l) l.scrollIntoView({ block: 'nearest' }); }, 50); };
+  $('bFill').onclick = () => { const n = layout().n; if (!n) return; st.copies = n; renderChips(); redraw(); };
 
   function syncZoom() { $('zoom').value = Math.round(st.z * 100); $('zoomO').textContent = Math.round(st.z * 100) + ' %'; }
   $('imgFile').onchange = e => {
@@ -205,12 +270,22 @@
     Galeria.add({ blob: f, name: f.name, tag: 'original', sig: 'f:' + f.name + ':' + f.size + ':' + f.lastModified }).then(id => { if (id) $('galInfo').textContent = 'Guardada en la galería: ' + f.name; });
     useBlob(f, { name: f.name }); e.target.value = '';
   };
-  let curBlob = null, curName = 'Círculo';
   function useBlob(b, o = {}) {
-    curBlob = b; curName = o.name || curName; if (!o.restore) tr.fork();
-    const im = new Image(); im.onload = () => { Object.assign(st, { img: im, z: 1, x: 0, y: 0 }, o.st || {}); syncZoom(); redraw(); };
+    const t = st; if (!o.keepOrig) t.orig = b; $('bRemove').disabled = false; $('bUndo').disabled = b === t.orig;
+    t.blob = b; t.name = o.name || t.name; if (!o.restore && items.length === 1) tr.fork();
+    const im = new Image(); im.onload = () => { Object.assign(t, { img: im, z: 1, x: 0, y: 0 }, o.st || {}); if (t === st) syncZoom(); redraw(); };
     im.onerror = () => alert('No se pudo leer la imagen'); im.src = URL.createObjectURL(b);
   }
+  $('bRemove').onclick = async () => {
+    const t = st; if (!t.blob) return; const w = $('bgWarn'), btn = $('bRemove'); w.hidden = false; w.textContent = 'Quitando el fondo…'; btn.disabled = true;
+    try {
+      const r = await Galeria.quitarFondo(t.blob, { name: t.name, trim: $('trim').checked, onStatus: m => w.textContent = m });
+      const nm = t.name.replace(/\.[^.]+$/, '') + ' (sin fondo ' + r.how + ')';
+      Galeria.add({ blob: r.blob, name: nm, tag: 'sin fondo' }).then(id => { $('galInfo').textContent = id ? 'Guardado en la galería: ' + nm : 'No se pudo guardar en la galería.'; });
+      w.hidden = true; if (t === st) useBlob(r.blob, { name: nm, keepOrig: true });
+    } catch (e) { w.textContent = e.message; } finally { btn.disabled = !st.blob; }
+  };
+  $('bUndo').onclick = () => { if (st.orig) useBlob(st.orig, { name: st.name.replace(/ \(sin fondo[^)]*\)$/, '') }); };
   $('bGal').onclick = async () => { const r = await Galeria.pick(); if (r) useBlob(r.blob, { name: r.name }); };
   $('zoom').oninput = e => { st.z = e.target.value / 100; syncZoom(); redraw(); };
   $('bCenter').onclick = () => { st.x = 0; st.y = 0; redraw(); };
@@ -238,37 +313,41 @@
   $('bPdf').onclick = async () => {
     if (!window.jspdf) { alert('No se pudo cargar jsPDF (¿sin conexión?).'); return; }
     const L = layout(); if (!L.n) { alert('El círculo no cabe en la hoja.'); return; }
-    const sheets = Math.max(1, Math.min(100, parseInt($('sheets').value) || 1));
+    const sl = slots(); if (!sl.length) { alert('No hay copias que imprimir (pon al menos 1 en algún círculo).'); return; }
+    const pages = Math.ceil(sl.length / L.n);
     $('status').textContent = 'Generando PDF…'; await new Promise(r => setTimeout(r, 30));
-    const S = Math.round(L.D / 25.4 * 300), c = document.createElement('canvas'); c.width = c.height = S;
-    drawCircle(c.getContext('2d'), S);
-    const url = c.toDataURL('image/png');
+    const S = Math.round(L.D / 25.4 * 300), urls = {};
+    [...new Set(sl)].forEach(i => { const c = document.createElement('canvas'); c.width = c.height = S; drawCircle(c.getContext('2d'), S, items[i]); urls[i] = c.toDataURL('image/png'); });
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: L.W > L.H ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
-    for (let p = 0; p < sheets; p++) {
+    for (let p = 0; p < pages; p++) {
       if (p) doc.addPage('a4', L.W > L.H ? 'landscape' : 'portrait');
       doc.setDrawColor(150); doc.setLineWidth(0.15);
-      for (let r = 0; r < L.rows; r++) for (let cc = 0; cc < L.cols; cc++) {
+      for (let q = 0; q < L.n; q++) {
+        const idx = sl[p * L.n + q]; if (idx === undefined) break;
+        const r = Math.floor(q / L.cols), cc = q % L.cols;
         const x = L.x0 + cc * (L.D + L.g), y = L.y0 + r * (L.D + L.g);
-        doc.addImage(url, 'PNG', x, y, L.D, L.D, 'circ', 'FAST');
+        doc.addImage(urls[idx], 'PNG', x, y, L.D, L.D, 'circ' + idx, 'FAST');
         if ($('cut').checked) doc.circle(x + L.D / 2, y + L.D / 2, L.D / 2 + 0.3, 'S');
       }
     }
     doc.save('circulos.pdf');
-    $('status').textContent = `PDF generado: ${sheets} hoja(s), ${sheets * L.n} círculos.`;
+    $('status').textContent = `PDF generado: ${pages} hoja(s), ${sl.length} círculos.`;
   };
 
   // Historial
-  const IDS = ['diam', 'orient', 'margin', 'gap', 'sheets', 'fc1', 'fc2', 'fc3'], CK = ['sky', 'frame', 'cut'];
+  const IDS = ['diam', 'orient', 'margin', 'gap', 'fc1', 'fc2', 'fc3'], CK = ['sky', 'frame', 'cut'];
   const tr = Galeria.tracker('circulo', async () => {
-    if (!st.img || !curBlob) return null;
-    const data = { z: st.z, x: st.x, y: st.y };
+    if (!items.some(it => it.img && it.blob)) return null;
+    const data = {}, blobs = {};
     IDS.forEach(k => data[k] = $(k).value); CK.forEach(k => data[k] = $(k).checked);
+    data.items = items.map((it, i) => { if (it.blob) blobs['img' + i] = it.blob; return { z: it.z, x: it.x, y: it.y, copies: it.copies, name: it.name, has: !!it.blob }; });
     const th = document.createElement('canvas'); th.width = th.height = 160; th.getContext('2d').drawImage(ed, 0, 0, 160, 160);
-    return { name: curName, summary: data.diam + ' cm · ' + (layout().n || 0) + ' por hoja', data, blobs: { img: curBlob }, thumb: th.toDataURL('image/png') };
+    const first = items.find(it => it.blob) || items[0];
+    return { name: first.name, summary: items.length + ' círculo(s) · ' + data.diam + ' cm · ' + (layout().n || 0) + ' por hoja', data, blobs, thumb: th.toDataURL('image/png') };
   });
   $('bSave').onclick = async () => {
-    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', curName.replace(/\.[^.]+$/, "")); if (!nm) return;
+    const nm = await Galeria.ask('Nombre del diseño (para encontrarlo después en el Historial):', (items.find(it => it.blob) || st).name.replace(/\.[^.]+$/, "")); if (!nm) return;
     const id = await tr.saveAs(nm.trim()); const b = $('bSave');
     if (!id) { alert('Primero sube una imagen.'); return; }
     b.textContent = '¡Guardado!'; setTimeout(() => b.textContent = 'Guardar diseño', 1800);
@@ -276,11 +355,21 @@
   async function openProject(p) {
     const d = p.data;
     IDS.forEach(k => { if (d[k] !== undefined) $(k).value = d[k]; }); CK.forEach(k => { if (d[k] !== undefined) $(k).checked = d[k]; }); $('frameOpts').hidden = !$('frame').checked;
-    useBlob(p.blobs.img, { name: p.name, restore: true, st: { z: d.z, x: d.x, y: d.y } }); tr.rebase();
+    const n = layout().n; lastN = n;
+    items.length = 0;
+    if (d.items) d.items.forEach((o, i) => { const it = newItem(o.copies); it.name = o.name || 'Círculo'; items.push(it); });
+    else items.push(newItem((d.sheets || 1) * n)); // diseño antiguo: un solo círculo repetido
+    select(0); pv = 0;
+    const list = d.items || [{ z: d.z, x: d.x, y: d.y, has: true }];
+    for (let i = 0; i < items.length; i++) {
+      const b = p.blobs['img' + i] || (i === 0 ? p.blobs.img : null); if (!b) continue;
+      const o = list[i]; st = items[i]; useBlob(b, { name: items[i].name === 'Círculo' ? p.name : items[i].name, restore: true, st: { z: o.z, x: o.x, y: o.y } });
+    }
+    select(0); tr.rebase();
   }
   $('bHist').onclick = async () => { const p = await Galeria.history('circulo'); if (p) openProject(p); };
   const abrir = new URLSearchParams(location.search).get('abrir'); if (abrir) Galeria.getProject(abrir).then(p => p && openProject(p));
-  redraw();
+  items.push(newItem(layout().n)); lastN = items[0].copies; select(0);
 })();
 </script>
 </body>

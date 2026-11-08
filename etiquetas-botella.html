@@ -116,6 +116,7 @@ Siestas voluntarias | 0 %</textarea></div>
       <h2>1. Plantilla (opcional)</h2>
       <label class="btn block sec" for="tplFile">Subir plantilla PNG (del tamaño de la etiqueta)</label>
       <input type="file" id="tplFile" accept="image/png,image/*">
+      <button class="btn sec block" id="bGalTpl" style="margin-top:8px">Elegir plantilla de la galería</button>
       <label class="radio"><input type="checkbox" id="useFrame" checked> Marco 3D alrededor del círculo</label>
       <div class="hint" id="tplInfo">Opcional: sube una plantilla PNG propia y se usará en lugar del diseño.</div>
       <div class="grid3" style="margin-top:10px">
@@ -173,7 +174,7 @@ Siestas voluntarias | 0 %</textarea></div>
   </div>
 </div>
 
-<script src="galeria.js?v=6"></script>
+<script src="galeria.js?v=7"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (() => {
@@ -405,6 +406,10 @@ ${wrapBlock('logo', 500, 270, 'L', logo)}${wrapBlock('ano', 2098, 120, 'R', ano)
       redraw();
     } catch (err) { alert(err.message); }
     e.target.value = '';
+  };
+  $('bGalTpl').onclick = async () => {
+    const r = await Galeria.pick(); if (!r) return;
+    try { tpl = await loadImg(r.blob); tplBlob = r.blob; $('useDesign').checked = false; $('tplInfo').textContent = `${r.name} — ${tpl.naturalWidth} × ${tpl.naturalHeight} px` + ((tpl.naturalWidth !== W || tpl.naturalHeight !== H) ? ` (se escala a ${W} × ${H})` : ''); redraw(); } catch (err) { alert(err.message); }
   };
   $('imgFile').onchange = async e => {
     const f = e.target.files[0]; if (!f) return;
